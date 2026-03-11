@@ -93,6 +93,64 @@ resolve_install_target() {
     return 0
 }
 
+# ── Install from git: clone, build frontend, pip install ──
+# Ensures the dashboard is built in the same env where Node/npm are available.
+install_from_git_with_build() {
+    _target="$1"
+    _spec="${_target#git+}"
+    _url=""
+    _ref=""
+    case "$_spec" in
+        *@*)
+            _ref="${_spec##*@}"
+            _url="${_spec%@*}"
+            ;;
+        *)
+            _url="$_spec"
+            ;;
+    esac
+    if [ -z "$_url" ]; then
+        fail "Could not parse git URL from: $_target"
+    fi
+
+    command -v git >/dev/null 2>&1 || fail "git is required to install from GitHub. Install git and try again."
+    command -v npm >/dev/null 2>&1 || fail "Node.js/npm is required to build the dashboard. Install Node 18+ and npm and try again."
+
+    _tmp=$(mktemp -d)
+    trap 'rm -rf "$_tmp"' EXIT
+
+    info "Cloning repository..."
+    if [ -n "$_ref" ]; then
+        if ! git clone --depth 1 --branch "$_ref" "$_url" "$_tmp"; then
+            fail "git clone failed. Check the repository URL and ref (e.g. main)."
+        fi
+    else
+        if ! git clone --depth 1 "$_url" "$_tmp"; then
+            fail "git clone failed. Check the repository URL."
+        fi
+    fi
+
+    if [ -d "$_tmp/frontend" ]; then
+        info "Building dashboard (npm install && npm run build)..."
+        if ! (cd "$_tmp/frontend" && npm install && npm run build); then
+            fail "Frontend build failed. Ensure Node 18+ and npm are installed."
+        fi
+        ok "Dashboard built"
+    fi
+
+    info "Installing $PACKAGE_NAME from local build..."
+    if ! "$VENV_DIR/bin/python" -m pip install --quiet hatchling hatch-vcs 2>/dev/null; then
+        true
+    fi
+    if ! "$VENV_DIR/bin/python" -m pip install --upgrade --no-build-isolation "$_tmp" >"$INSTALL_LOG" 2>&1; then
+        warn "Install failed. Last log lines:"
+        tail -40 "$INSTALL_LOG" >&2 || true
+        fail "pip install failed (full log: $INSTALL_LOG)"
+    fi
+    trap - EXIT
+    rm -rf "$_tmp"
+}
+
 # ── Main ────────────────────────────────────────
 main() {
     printf "\n${BOLD}Skaro Installer${RESET}\n\n"
@@ -124,27 +182,20 @@ main() {
     INSTALL_LOG="$SKARO_HOME/install.log"
     "$VENV_DIR/bin/python" -m pip install --upgrade pip >/dev/null 2>&1 || true
 
-    # When installing from git, use --no-build-isolation so the frontend build hook
-    # runs in an environment where Node.js/npm are available (current PATH).
-    USE_NO_BUILD_ISOLATION=""
+    # When installing from git: clone repo, build frontend in this env (Node/npm available), then pip install.
+    # This guarantees the dashboard is built; pip's build from git URL can run in an isolated env without npm.
     case "$INSTALL_TARGET_RESOLVED" in
-        git+*|git@*) USE_NO_BUILD_ISOLATION="1" ;;
+        git+*|git@*)
+            install_from_git_with_build "$INSTALL_TARGET_RESOLVED"
+            ;;
+        *)
+            if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
+                warn "Install failed. Last log lines:"
+                tail -40 "$INSTALL_LOG" >&2 || true
+                fail "pip install failed (full log: $INSTALL_LOG)"
+            fi
+            ;;
     esac
-    if [ -n "$USE_NO_BUILD_ISOLATION" ]; then
-        info "Installing from git: ensuring build deps and using current env (Node.js required for dashboard)..."
-        "$VENV_DIR/bin/python" -m pip install --quiet hatchling hatch-vcs 2>/dev/null || true
-        if ! "$VENV_DIR/bin/python" -m pip install --upgrade --no-build-isolation "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
-            warn "Install failed. Last log lines:"
-            tail -40 "$INSTALL_LOG" >&2 || true
-            fail "pip install failed (full log: $INSTALL_LOG). Ensure Node.js 18+ and npm are installed so the dashboard can be built."
-        fi
-    else
-        if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
-            warn "Install failed. Last log lines:"
-            tail -40 "$INSTALL_LOG" >&2 || true
-            fail "pip install failed (full log: $INSTALL_LOG)"
-        fi
-    fi
     tail -1 "$INSTALL_LOG" || true
     installed_version=$("$VENV_DIR/bin/python" -c "import importlib.metadata as m; print(m.version('skaro'))" 2>/dev/null || true)
     ok "Installed $PACKAGE_NAME $installed_version"

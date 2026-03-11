@@ -45,6 +45,14 @@ async function get(path, signal) {
 	return res.json();
 }
 
+/** AbortSignal that fires after ms. Use for request timeouts. */
+export function timeoutSignal(ms) {
+	const c = new AbortController();
+	const t = setTimeout(() => c.abort(), ms);
+	c.signal.addEventListener('abort', () => clearTimeout(t), { once: true });
+	return c.signal;
+}
+
 /**
  * @param {string} path
  * @param {any} body

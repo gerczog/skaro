@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { t, setLocale } from '$lib/i18n/index.js';
-	import { api, connectWs, onWsEvent, onWsStatus } from '$lib/api/client.js';
+	import { api, connectWs, onWsEvent, onWsStatus, timeoutSignal } from '$lib/api/client.js';
 	import { status, wsConnected, taskDetail, updateInfo } from '$lib/stores/statusStore.js';
 	import { addLog, startLlm, addLlmChunk, endLlm } from '$lib/stores/logStore.js';
 	import { cachedFetch, invalidate } from '$lib/api/cache.js';
@@ -85,9 +85,12 @@
 		});
 	});
 
+	const STATUS_TIMEOUT_MS = 20_000;
+
 	async function loadStatus() {
 		try {
-			const statusData = await cachedFetch('status', () => api.getStatus(), 5000);
+			const statusData = await cachedFetch('status', () =>
+				api.getStatus(timeoutSignal(STATUS_TIMEOUT_MS)), 5000);
 			status.set(statusData);
 			const uiLang = statusData?.config?.lang;
 			if (uiLang) {
@@ -95,7 +98,7 @@
 			}
 			error = '';
 		} catch (e) {
-			error = e.message;
+			error = e.name === 'AbortError' ? 'Request timed out' : e.message;
 		}
 	}
 

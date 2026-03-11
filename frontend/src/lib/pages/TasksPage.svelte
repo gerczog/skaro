@@ -1,10 +1,11 @@
 <script>
+	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n/index.js';
 	import { status } from '$lib/stores/statusStore.js';
 	import { addLog, addError } from '$lib/stores/logStore.js';
 	import { invalidate } from '$lib/api/cache.js';
-	import { api } from '$lib/api/client.js';
-	import { Package, Plus, GripVertical, Rocket } from 'lucide-svelte';
+	import { api, timeoutSignal } from '$lib/api/client.js';
+	import { Package, Plus, GripVertical, Rocket, Loader2 } from 'lucide-svelte';
 	import TaskCard from '$lib/pages/tasks/TaskCard.svelte';
 	import CreateTaskModal from '$lib/pages/tasks/CreateTaskModal.svelte';
 	import AutopilotOverlay from '$lib/pages/tasks/AutopilotOverlay.svelte';
@@ -20,6 +21,29 @@
 	// ── Drag & Drop state ──
 	let dragIndex = $state(-1);
 	let overIndex = $state(-1);
+	let statusLoading = $state(false);
+
+	onMount(() => {
+		refreshStatus();
+	});
+
+	/** Refresh status so tasks list is up to date (e.g. after devplan update). Avoids stale/hang. */
+	async function refreshStatus() {
+		invalidate('status');
+		statusLoading = true;
+		try {
+			const data = await api.getStatus(timeoutSignal(20_000));
+			status.set(data);
+		} catch (e) {
+			if (e.name === 'AbortError') {
+				addError('Request timed out', 'tasksStatus');
+			} else {
+				addError(e.message, 'tasksStatus');
+			}
+		} finally {
+			statusLoading = false;
+		}
+	}
 
 	/** Returns true when all relevant phases of a task are complete. */
 	function isTaskDone(task) {
@@ -184,7 +208,7 @@
 <div class="page-with-tabs">
 	<div class="main-header">
 		<div class="header-left">
-			<h2><Package size={24} /> {$t('task.title')}</h2>
+			<h2><Package size={24} /> {$t('task.title')}{#if statusLoading}<Loader2 size={20} class="spin header-spinner" />{/if}</h2>
 			<p>{$t('task.subtitle')}</p>
 		</div>
 		<div class="header-right">
@@ -303,6 +327,11 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+	.header-spinner {
+		vertical-align: middle;
+		margin-left: 0.5rem;
+		opacity: 0.8;
 	}
 
 	.header-left {

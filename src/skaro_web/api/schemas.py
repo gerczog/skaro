@@ -100,7 +100,8 @@ class DevPlanUpdateBody(BaseModel):
 
 
 class DevPlanConfirmUpdateBody(BaseModel):
-    updated_devplan: str = Field(..., min_length=1)
+    """Accept update: full devplan text (can be empty if only new_milestones) + new milestones."""
+    updated_devplan: str = ""
     new_milestones: list[DevPlanMilestone] = Field(default_factory=list)
 
 

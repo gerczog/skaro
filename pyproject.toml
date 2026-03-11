@@ -62,9 +62,11 @@ packages = ["src/skaro_core", "src/skaro_cli", "src/skaro_web"]
 # Bundle root-level templates/ into the skaro_core package so that
 # importlib.resources.files("skaro_core") / "templates" resolves correctly
 # after pip install.
+# Include full skaro_web/static (index.html, _app/, icons/) — hatch doesn't ship
+# non-.py files from packages by default.
 [tool.hatch.build.targets.wheel.force-include]
 "templates" = "skaro_core/templates"
-"src/skaro_web/static/_app" = "skaro_web/static/_app"
+"src/skaro_web/static" = "skaro_web/static"
 
 [tool.hatch.build.hooks.custom]
 path = "build_hooks/frontend_hook.py"

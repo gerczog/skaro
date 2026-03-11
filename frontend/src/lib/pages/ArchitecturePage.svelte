@@ -5,7 +5,7 @@
 	import { status } from '$lib/stores/statusStore.js';
 	import { addLog, addError } from '$lib/stores/logStore.js';
 	import { cachedFetch, invalidate } from '$lib/api/cache.js';
-	import { Layers, AlertTriangle, Info, CheckCircle, Loader2, Pencil, Sparkles, FolderOpen, MessageSquare } from 'lucide-svelte';
+	import { Layers, AlertTriangle, Info, CheckCircle, Loader2, Pencil, FolderOpen, MessageSquare } from 'lucide-svelte';
 	import FileTabs from '$lib/ui/FileTabs.svelte';
 	import ArchActions from './architecture/ArchActions.svelte';
 	import ProposedArchitecture from './architecture/ProposedArchitecture.svelte';
@@ -26,9 +26,6 @@
 	let showEditor = $state(false);
 	let showChat = $state(false);
 	let chatHasMessages = $state(false);
-	let showGenerateFromIdea = $state(false);
-	let generateIdeaDescription = $state('');
-	let generatingFromIdea = $state(false);
 
 	onMount(() => { load(); });
 
@@ -81,6 +78,7 @@
 				showChat = false;
 				chatHasMessages = false;
 				await load();
+				activeTab = 'document';
 			}
 			return result;
 		} catch (e) {
@@ -102,33 +100,6 @@
 	function openChat() {
 		showChat = true;
 		activeTab = 'chat';
-	}
-
-	async function generateFromIdea() {
-		const desc = generateIdeaDescription.trim();
-		if (!desc) return;
-		generatingFromIdea = true;
-		addLog($t('log.arch_generate_start'));
-		try {
-			const result = await api.generateArchitectureFromIdea(desc);
-			if (result?.success && result?.content) {
-				proposedArchitecture = result.content;
-				reviewResult = result.message || $t('log.arch_generate_done');
-				activeTab = 'review';
-				showGenerateFromIdea = false;
-				generateIdeaDescription = '';
-				addLog($t('log.arch_generate_done'));
-			} else if (result?.message) {
-				reviewResult = result.message;
-				activeTab = 'review';
-				addLog(result.message);
-			} else {
-				addError(result?.message || 'No architecture generated', 'archGenerate');
-			}
-		} catch (e) {
-			addError(e.message, 'archGenerate');
-		}
-		generatingFromIdea = false;
 	}
 
 	async function review() {
@@ -292,25 +263,6 @@
 	{#if !data.has_architecture}
 		<div class="alert alert-info"><Info size={14} /> {$t('arch.empty')}</div>
 		<p class="arch-hint">{$t('arch.generate_hint')}</p>
-		<div class="generate-from-idea-card">
-			<button type="button" class="btn" onclick={() => showGenerateFromIdea = !showGenerateFromIdea}>
-				<Sparkles size={14} /> {$t('arch.generate_from_idea')}
-			</button>
-			{#if showGenerateFromIdea}
-				<div class="generate-from-idea-form">
-					<textarea
-						bind:value={generateIdeaDescription}
-						placeholder={$t('arch.idea_placeholder')}
-						rows="4"
-						disabled={generatingFromIdea}
-					></textarea>
-					<button class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
-						{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
-						{$t('arch.generate_btn')}
-					</button>
-				</div>
-			{/if}
-		</div>
 		<div class="btn-group">
 			<button class="btn btn-primary" onclick={openChat}>
 				<MessageSquare size={14} /> {$t('arch.generate_with_ai')}
@@ -330,27 +282,6 @@
 			onReview={review}
 			onEdit={() => showEditor = true}
 		/>
-		<div class="btn-group">
-			<button type="button" class="btn" onclick={() => showGenerateFromIdea = !showGenerateFromIdea}>
-				<Sparkles size={14} /> {$t('arch.generate_from_idea')}
-			</button>
-		</div>
-		{#if showGenerateFromIdea}
-			<div class="generate-from-idea-card expanded">
-				<div class="generate-from-idea-form">
-					<textarea
-						bind:value={generateIdeaDescription}
-						placeholder={$t('arch.idea_placeholder')}
-						rows="4"
-						disabled={generatingFromIdea}
-					></textarea>
-					<button class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
-						{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
-						{$t('arch.generate_btn')}
-					</button>
-				</div>
-			</div>
-		{/if}
 
 	{:else}
 		<div class="alert alert-info">{$t('arch.has_arch')}</div>
@@ -361,27 +292,6 @@
 			onReview={review} onApprove={approve}
 			onEdit={() => showEditor = true}
 		/>
-		<div class="btn-group">
-			<button type="button" class="btn" onclick={() => showGenerateFromIdea = !showGenerateFromIdea}>
-				<Sparkles size={14} /> {$t('arch.generate_from_idea')}
-			</button>
-		</div>
-		{#if showGenerateFromIdea}
-			<div class="generate-from-idea-card expanded">
-				<div class="generate-from-idea-form">
-					<textarea
-						bind:value={generateIdeaDescription}
-						placeholder={$t('arch.idea_placeholder')}
-						rows="4"
-						disabled={generatingFromIdea}
-					></textarea>
-					<button class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
-						{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
-						{$t('arch.generate_btn')}
-					</button>
-				</div>
-			</div>
-		{/if}
 	{/if}
 
 	{#if archTabs.length > 0}
@@ -459,31 +369,5 @@
 		color: var(--dm);
 		font-size: 0.875rem;
 		margin-bottom: 0.75rem;
-	}
-	.generate-from-idea-card {
-		margin-bottom: 1rem;
-	}
-	.generate-from-idea-card.expanded {
-		margin-top: 0.75rem;
-	}
-	.generate-from-idea-form {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-		padding: 0.75rem;
-		background: var(--sf);
-		border: 0.0625rem solid var(--bd);
-		border-radius: var(--r);
-	}
-	.generate-from-idea-form textarea {
-		width: 100%;
-		resize: vertical;
-		min-height: 5rem;
-		padding: 0.5rem;
-		border-radius: var(--r);
-		border: 0.0625rem solid var(--bd);
-		background: var(--bg);
-		color: var(--fg);
 	}
 </style>

@@ -49,6 +49,26 @@ curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
 irm https://raw.githubusercontent.com/gerczog/skaro/main/install.ps1 | iex
 ```
 
+### Universal install (any fork)
+
+Upstream repository: [https://github.com/skarodev/skaro](https://github.com/skarodev/skaro)  
+This fork: [https://github.com/gerczog/skaro](https://github.com/gerczog/skaro)
+
+By default, `install.sh` installs from PyPI.  
+To install from any fork, pass env vars:
+
+```sh
+# Install from a fork (owner/repo)
+SKARO_GITHUB_REPO="gerczog/skaro" \
+curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
+```
+
+```sh
+# Install from any custom pip target (takes priority)
+SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main" \
+curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
+```
+
 ### Install upstream
 
 **Linux / macOS:**

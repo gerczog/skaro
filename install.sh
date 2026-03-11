@@ -8,7 +8,9 @@
 # What it does:
 #   1. Finds Python 3.11+
 #   2. Creates isolated venv at ~/.skaro/venv
-#   3. Installs (or upgrades) the 'skaro' package from PyPI
+#   3. Installs (or upgrades) the 'skaro' package
+#      - from PyPI by default
+#      - or from any GitHub fork via env vars
 #   4. Symlinks 'skaro' binary into ~/.local/bin
 #
 # Uninstall:
@@ -20,7 +22,9 @@ set -e
 SKARO_HOME="${SKARO_HOME:-$HOME/.skaro}"
 VENV_DIR="$SKARO_HOME/venv"
 BIN_DIR="${SKARO_BIN:-$HOME/.local/bin}"
-PACKAGE="skaro"
+PACKAGE_NAME="skaro"
+SKARO_GITHUB_REPO="${SKARO_GITHUB_REPO:-}"
+INSTALL_TARGET="${SKARO_INSTALL_TARGET:-}"
 MIN_PYTHON_MINOR=11
 
 # ── Colors (if terminal supports them) ──────────
@@ -62,6 +66,22 @@ check_venv_module() {
     "$1" -m venv --help >/dev/null 2>&1
 }
 
+# ── Resolve installation target ─────────────────
+resolve_install_target() {
+    if [ -n "$INSTALL_TARGET" ]; then
+        echo "$INSTALL_TARGET"
+        return 0
+    fi
+
+    if [ -n "$SKARO_GITHUB_REPO" ]; then
+        echo "git+https://github.com/$SKARO_GITHUB_REPO.git"
+        return 0
+    fi
+
+    echo "$PACKAGE_NAME"
+    return 0
+}
+
 # ── Main ────────────────────────────────────────
 main() {
     printf "\n${BOLD}Skaro Installer${RESET}\n\n"
@@ -88,11 +108,12 @@ main() {
     fi
 
     # 4. Install / upgrade skaro
-    info "Installing $PACKAGE (this may take a moment)..."
+    INSTALL_TARGET_RESOLVED=$(resolve_install_target)
+    info "Installing $PACKAGE_NAME from $INSTALL_TARGET_RESOLVED (this may take a moment)..."
     "$VENV_DIR/bin/pip" install --upgrade pip >/dev/null 2>&1 || true
-    "$VENV_DIR/bin/pip" install --upgrade "$PACKAGE" 2>&1 | tail -1
-    installed_version=$("$VENV_DIR/bin/pip" show "$PACKAGE" 2>/dev/null | grep "^Version:" | cut -d' ' -f2)
-    ok "Installed $PACKAGE $installed_version"
+    "$VENV_DIR/bin/pip" install --upgrade "$INSTALL_TARGET_RESOLVED" 2>&1 | tail -1
+    installed_version=$("$VENV_DIR/bin/pip" show "$PACKAGE_NAME" 2>/dev/null | grep "^Version:" | cut -d' ' -f2)
+    ok "Installed $PACKAGE_NAME $installed_version"
 
     # 5. Symlink into BIN_DIR
     mkdir -p "$BIN_DIR"

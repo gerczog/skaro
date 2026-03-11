@@ -1,8 +1,8 @@
-import ru from './ru.js';
+import en from './en.js';
 
 /** @type {Record<string, string>} */
 export default {
-	...ru,
+	...en,
 	'app.title': 'Skaro Панель',
 	'app.loading': 'Завантаження...',
 	'app.not_initialized': 'Skaro не ініціалізовано. Виконайте',
@@ -59,6 +59,14 @@ export default {
 	'arch.chat_tab': 'Генерація ШІ',
 	'arch.chat_placeholder_start': 'Опишіть ваш проєкт...',
 	'arch.chat_placeholder_reply': 'Напишіть вашу відповідь...',
+	'devplan.title': 'План розробки',
+	'devplan.subtitle': 'Дорожня карта проєкту: віхи, задачі, пріоритети та прогрес.',
+	'devplan.empty': 'Плану розробки ще немає.',
+	'devplan.empty_hint': 'Згенеруйте план на основі архітектури або створіть вручну.',
+	'devplan.generate': 'Згенерувати план розробки',
+	'devplan.regenerate': 'Перегенерувати з нуля',
+	'devplan.generating': 'LLM генерує план розробки...',
+	'devplan.document': 'План розробки',
 	'settings.title': 'Налаштування',
 	'settings.subtitle': 'Інформація про проєкт, конфігурація LLM, ролі та параметри.',
 	'settings.project_title': 'Проєкт',

@@ -23,6 +23,7 @@ _PRESET_REGISTRY: list[dict[str, str]] = [
     {"id": "angular",      "name": "Angular",      "category": "frontend", "file": "angular.md"},
     {"id": "fastapi",      "name": "FastAPI",       "category": "backend",  "file": "fastapi.md"},
     {"id": "django",       "name": "Django",        "category": "backend",  "file": "django.md"},
+    {"id": "python-cli",   "name": "Python CLI",   "category": "cli",      "file": "python-cli.md"},
     {"id": "express",      "name": "Express.js",    "category": "backend",  "file": "express.md"},
     {"id": "nestjs",       "name": "NestJS",        "category": "backend",  "file": "nestjs.md"},
     {"id": "react-native", "name": "React Native",  "category": "mobile",   "file": "react-native.md"},

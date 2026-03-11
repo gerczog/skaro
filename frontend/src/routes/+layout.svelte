@@ -89,8 +89,9 @@
 		try {
 			const statusData = await cachedFetch('status', () => api.getStatus(), 5000);
 			status.set(statusData);
-			if (statusData?.lang) {
-				setLocale(statusData.lang);
+			const uiLang = statusData?.config?.lang;
+			if (uiLang) {
+				setLocale(uiLang);
 			}
 			error = '';
 		} catch (e) {

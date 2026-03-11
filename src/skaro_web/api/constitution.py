@@ -5,7 +5,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from skaro_core.artifacts import ArtifactManager, TEMPLATES_PKG_DIR
-from skaro_core.phases.constitution_gen import ConstitutionGenPhase
 from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase
 from skaro_web.api.schemas import ContentBody, GenerateFromIdeaBody
 
@@ -76,6 +75,13 @@ async def generate_constitution_from_idea(
     """Generate constitution from a short project idea description (LLM)."""
     if not payload.description or not payload.description.strip():
         raise HTTPException(status_code=400, detail="description is required")
+    try:
+        from skaro_core.phases.constitution_gen import ConstitutionGenPhase
+    except ModuleNotFoundError as e:
+        raise HTTPException(
+            status_code=501,
+            detail="Upgrade Skaro to a version with constitution-from-idea (install from your fork or latest main).",
+        ) from e
     phase = ConstitutionGenPhase(project_root=project_root)
     async with llm_phase(ws_manager, "constitution-generate", phase):
         content = await phase.generate_from_description(payload.description.strip())

@@ -33,6 +33,24 @@ Specifications live in the repository next to code. Context never gets lost.
 
 Python 3.11+ required. Everything included: CLI, web dashboard, LLM adapters, templates.
 
+### Install this fork
+
+Fork repository: [https://github.com/gerczog/skaro](https://github.com/gerczog/skaro)
+
+**Linux / macOS (fork install script):**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
+```
+
+**Windows (PowerShell, fork install script):**
+
+```powershell
+irm https://raw.githubusercontent.com/gerczog/skaro/main/install.ps1 | iex
+```
+
+### Install upstream
+
 **Linux / macOS:**
 
 ```sh
@@ -128,6 +146,4 @@ pytest
 AGPL-3.0 — see [LICENSE](LICENSE).
 
 ---
-
-From Russia with love ❤️
 

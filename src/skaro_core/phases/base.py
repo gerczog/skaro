@@ -128,6 +128,7 @@ class BasePhase(ABC):
     _LANG_NAMES: dict[str, str] = {
         "en": "English",
         "ru": "Russian",
+        "ua": "Ukrainian",
         "de": "German",
         "fr": "French",
         "es": "Spanish",

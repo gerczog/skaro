@@ -140,10 +140,11 @@ def _print_init_banner() -> None:
 def _select_language() -> str:
     """Prompt for language via interactive select, apply immediately."""
     lang = questionary.select(
-        "Language / Язык",
+        "Language / Язык / Мова",
         choices=[
             questionary.Choice("English", value="en"),
             questionary.Choice("Русский", value="ru"),
+            questionary.Choice("Українська", value="ua"),
         ],
         default="en",
         style=SKARO_STYLE,
@@ -327,7 +328,7 @@ def _ensure_initialized() -> ArtifactManager:
 
 
 @click.group(invoke_without_command=True)
-@click.option("--lang", default=None, help="Language: en, ru")
+@click.option("--lang", default=None, help="Language: en, ru, ua")
 @click.version_option(package_name="skaro")
 @click.pass_context
 def cli(ctx: click.Context, lang: str | None) -> None:

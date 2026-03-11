@@ -30,6 +30,10 @@ class TestSetLocale:
         set_locale("ru")
         assert get_locale() == "ru"
 
+    def test_set_ua(self):
+        set_locale("ua")
+        assert get_locale() == "ua"
+
     def test_unknown_falls_back_to_en(self):
         set_locale("xx_nonexistent")
         assert get_locale() == "en"

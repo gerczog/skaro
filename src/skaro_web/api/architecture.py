@@ -6,7 +6,7 @@ import json
 import re as _re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from skaro_core.artifacts import ArtifactManager
 from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase, ConnectionManager
@@ -17,6 +17,7 @@ from skaro_web.api.schemas import (
     AdrCreateBody,
     AdrStatusBody,
     ContentBody,
+    GenerateFromIdeaBody,
 )
 
 router = APIRouter(prefix="/api/architecture", tags=["architecture"])
@@ -74,6 +75,34 @@ async def get_architecture(am: ArtifactManager = Depends(get_am)):
 
 
 # ── Chat-based architecture generation ────────────
+
+
+@router.post("/generate")
+async def generate_architecture_from_idea(
+    payload: GenerateFromIdeaBody,
+    project_root: Path = Depends(get_project_root),
+    ws: ConnectionManager = Depends(get_ws_manager),
+):
+    """One-shot: generate architecture from a short project/idea description (LLM)."""
+    from skaro_core.phases.architecture import ArchitecturePhase
+
+    if not payload.description or not payload.description.strip():
+        raise HTTPException(status_code=400, detail="description is required")
+    phase = ArchitecturePhase(project_root=project_root)
+    async with llm_phase(ws, "architecture-generate", phase):
+        result = await phase.chat(
+            message=payload.description.strip(),
+            conversation=[],
+        )
+    files = result.data.get("files", {}) or {}
+    arch_file = files.get("architecture.md", {})
+    content = (arch_file.get("new") or "").strip()
+    return {
+        "success": result.success,
+        "message": result.message or "",
+        "content": content,
+        "has_architecture": bool(content),
+    }
 
 
 @router.post("/chat")

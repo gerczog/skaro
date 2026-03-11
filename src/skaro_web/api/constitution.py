@@ -5,8 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from skaro_core.artifacts import ArtifactManager, TEMPLATES_PKG_DIR
-from skaro_web.api.deps import broadcast, get_am
-from skaro_web.api.schemas import ContentBody
+from skaro_core.phases.constitution_gen import ConstitutionGenPhase
+from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase
+from skaro_web.api.schemas import ContentBody, GenerateFromIdeaBody
 
 router = APIRouter(prefix="/api/constitution", tags=["constitution"])
 
@@ -63,6 +64,23 @@ async def save_constitution(
 async def list_presets():
     """Return list of available constitution presets (metadata only)."""
     return {"presets": _PRESET_REGISTRY}
+
+
+@router.post("/generate")
+async def generate_constitution_from_idea(
+    payload: GenerateFromIdeaBody,
+    project_root=Depends(get_project_root),
+    ws_manager=Depends(get_ws_manager),
+):
+    """Generate constitution from a short project idea description (LLM)."""
+    if not payload.description or not payload.description.strip():
+        raise HTTPException(status_code=400, detail="description is required")
+    phase = ConstitutionGenPhase(project_root=project_root)
+    async with llm_phase(ws_manager, "constitution-generate", phase):
+        content = await phase.generate_from_description(payload.description.strip())
+    if not content or not content.strip():
+        return {"success": False, "message": "LLM returned empty content", "content": ""}
+    return {"success": True, "content": content}
 
 
 @router.get("/presets/{preset_id}")

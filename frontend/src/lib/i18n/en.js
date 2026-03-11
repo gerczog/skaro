@@ -65,6 +65,7 @@ export default {
 	'const.title': 'Constitution',
 	'const.subtitle': 'Immutable project principles: stack, standards, testing, security, LLM rules.',
 	'const.empty': 'Constitution is empty or not filled in.',
+	'const.generate_hint': 'Generate constitution with AI from an idea description, or choose a template below and edit in the editor.',
 	'const.next_steps': 'Next steps',
 	'const.step1': 'Open {file} in your IDE',
 	'const.step2': 'Fill in all sections: Stack, Coding Standards, Testing, Constraints, Security, LLM Rules',
@@ -75,6 +76,10 @@ export default {
 	'const.invalid': 'Some sections are missing or incomplete:',
 	'const.content': 'Content',
 	'const.preset_hint': 'Choose a framework template to pre-fill the constitution, then customize it for your project.',
+	'const.generate_with_ai': 'Generate with AI',
+	'const.generate_from_idea': 'Generate from idea description',
+	'const.idea_placeholder': 'Describe your project: stack, goals, constraints…',
+	'const.generate_btn': 'Generate',
 
 	// Architecture
 	'arch.title': 'Architecture',
@@ -108,6 +113,9 @@ export default {
 	'arch.chat_tab': 'AI Generation',
 	'arch.chat_placeholder_start': 'Describe your project...',
 	'arch.chat_placeholder_reply': 'Write your reply...',
+	'arch.generate_from_idea': 'Generate from idea description',
+	'arch.idea_placeholder': 'Describe your project: stack, goals, constraints…',
+	'arch.generate_btn': 'Generate',
 
 	// ADR
 	'nav.adr': 'ADR',
@@ -305,6 +313,8 @@ export default {
 
 	// Log
 	'log.validating': 'Validating constitution...',
+	'log.const_generate_start': 'Generating constitution from idea...',
+	'log.const_generate_done': 'Constitution draft ready — edit and save',
 	'log.validation_passed': 'Constitution validation passed',
 	'log.validation_issues': 'Constitution validation has issues',
 	'log.arch_review_start': 'Starting architecture review...',
@@ -359,6 +369,8 @@ export default {
 	'log.arch_apply_done': 'Improved architecture ready for review',
 	'log.arch_chat_response': 'Architecture chat: response received',
 	'log.arch_chat_accepted': 'Architecture generated and saved',
+	'log.arch_generate_start': 'Generating architecture from idea...',
+	'log.arch_generate_done': 'Architecture draft ready — accept or edit',
 
 	// Settings
 	'nav.stats': 'Statistics',

@@ -17,7 +17,7 @@ GLOBAL_CONFIG_DIR = Path.home() / ".skaro"
 
 # Roles and which phases they cover
 ROLE_PHASES: dict[str, list[str]] = {
-    "architect": ["architecture", "devplan", "plan", "import_analyze"],
+    "architect": ["architecture", "devplan", "plan", "import_analyze", "constitution_gen"],
     "coder": ["implement", "fix"],
     "reviewer": ["tests", "clarify"],
 }

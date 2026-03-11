@@ -5,7 +5,7 @@
 	import { addLog, addError } from '$lib/stores/logStore.js';
 	import { cachedFetch, invalidate } from '$lib/api/cache.js';
 	import { status } from '$lib/stores/statusStore.js';
-	import { FileText, AlertTriangle, CheckCircle, XCircle, Loader2, Pencil } from 'lucide-svelte';
+	import { FileText, AlertTriangle, CheckCircle, XCircle, Loader2, Pencil, Sparkles } from 'lucide-svelte';
 	import MarkdownContent from '$lib/ui/MarkdownContent.svelte';
 	import MdEditor from '$lib/ui/md-editor/MdEditor.svelte';
 	import TemplatePicker from '$lib/pages/constitution/TemplatePicker.svelte';
@@ -16,6 +16,9 @@
 	let error = $state('');
 	let showEditor = $state(false);
 	let editorContent = $state('');
+	let showGenerateFromIdea = $state(false);
+	let generateIdeaDescription = $state('');
+	let generatingFromIdea = $state(false);
 
 	onMount(() => { load(); });
 
@@ -59,6 +62,28 @@
 		editorContent = data?.content || '';
 		showEditor = true;
 	}
+
+	async function generateFromIdea() {
+		const desc = generateIdeaDescription.trim();
+		if (!desc) return;
+		generatingFromIdea = true;
+		addLog($t('log.const_generate_start'));
+		try {
+			const result = await api.generateConstitutionFromIdea(desc);
+			if (result?.success && result?.content) {
+				editorContent = result.content;
+				showEditor = true;
+				showGenerateFromIdea = false;
+				generateIdeaDescription = '';
+				addLog($t('log.const_generate_done'));
+			} else {
+				addError(result?.message || 'No content returned', 'constGenerate');
+			}
+		} catch (e) {
+			addError(e.message, 'constGenerate');
+		}
+		generatingFromIdea = false;
+	}
 </script>
 
 <div class="main-header">
@@ -73,17 +98,38 @@
 {:else}
 	{#if !data.has_constitution}
 		<div class="alert alert-info"><AlertTriangle size={14} /> {$t('const.empty')}</div>
-		<TemplatePicker onSelect={openPreset} />
-		<div class="btn-group">
+		<p class="const-hint">{$t('const.generate_hint')}</p>
+		<div class="btn-group constitution-actions">
+			<button type="button" class="btn btn-primary" onclick={() => showGenerateFromIdea = !showGenerateFromIdea}>
+				<Sparkles size={14} /> {$t('const.generate_with_ai')}
+			</button>
 			<button class="btn" onclick={openEditor}>
 				<Pencil size={14} /> {$t('editor.edit')}
 			</button>
 		</div>
+		{#if showGenerateFromIdea}
+			<div class="generate-from-idea-form constitution-generate-form">
+				<textarea
+					bind:value={generateIdeaDescription}
+					placeholder={$t('const.idea_placeholder')}
+					rows="4"
+					disabled={generatingFromIdea}
+				></textarea>
+				<button type="button" class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
+					{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
+					{$t('const.generate_btn')}
+				</button>
+			</div>
+		{/if}
+		<TemplatePicker onSelect={openPreset} />
 	{:else}
 		{#if $status?.constitution_validated}
 			<div class="alert alert-success"><CheckCircle size={14} /> {$t('const.valid')}</div>
 		{/if}
 		<div class="btn-group">
+			<button type="button" class="btn btn-primary" onclick={() => showGenerateFromIdea = true}>
+				<Sparkles size={14} /> {$t('const.generate_with_ai')}
+			</button>
 			{#if !$status?.constitution_validated}
 				<button class="btn btn-primary" disabled={validating} onclick={validate}>
 					{#if validating}<Loader2 size={14} class="spin" />{:else}<CheckCircle size={14} />{/if}
@@ -94,6 +140,22 @@
 				<Pencil size={14} /> {$t('editor.edit')}
 			</button>
 		</div>
+		{#if showGenerateFromIdea}
+			<div class="generate-from-idea-card expanded">
+				<div class="generate-from-idea-form">
+					<textarea
+						bind:value={generateIdeaDescription}
+						placeholder={$t('const.idea_placeholder')}
+						rows="4"
+						disabled={generatingFromIdea}
+					></textarea>
+					<button class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
+						{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
+						{$t('const.generate_btn')}
+					</button>
+				</div>
+			</div>
+		{/if}
 	{/if}
 
 	{#if validation}
@@ -124,3 +186,43 @@
 		/>
 	{/if}
 {/if}
+
+<style>
+	.const-hint {
+		color: var(--dm);
+		font-size: 0.875rem;
+		margin-bottom: 0.75rem;
+	}
+	.constitution-actions {
+		margin-bottom: 0.75rem;
+	}
+	.constitution-generate-form {
+		margin-bottom: 1.25rem;
+	}
+	.generate-from-idea-card {
+		margin-bottom: 1rem;
+	}
+	.generate-from-idea-card.expanded {
+		margin-top: 0.75rem;
+	}
+	.generate-from-idea-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+		padding: 0.75rem;
+		background: var(--sf);
+		border: 0.0625rem solid var(--bd);
+		border-radius: var(--r);
+	}
+	.generate-from-idea-form textarea {
+		width: 100%;
+		resize: vertical;
+		min-height: 5rem;
+		padding: 0.5rem;
+		border-radius: var(--r);
+		border: 0.0625rem solid var(--bd);
+		background: var(--bg);
+		color: var(--fg);
+	}
+</style>

@@ -8,6 +8,7 @@ build/
 *.whl
 .venv/
 venv/
+src/skaro_web/static/index.html
 
 # ── Frontend (SvelteKit) ───────────────────────────────
 frontend/node_modules/
@@ -33,3 +34,15 @@ htmlcov/
 
 pack.bat
 *.zip
+
+# ── Skaro (auto-generated, do not remove this marker) ──
+# This section is managed by `skaro init`. Do NOT delete it.
+# You may add your own rules below the closing marker.
+#
+# Secrets — API keys, never commit!
+.skaro/secrets.yaml
+
+# Usage tracking — local stats, not project artifacts
+.skaro/token_usage.yaml
+.skaro/usage_log.jsonl
+# ── /Skaro ─────────────────────────────────────────────

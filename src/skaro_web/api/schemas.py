@@ -16,6 +16,11 @@ class ContentBody(BaseModel):
     content: str
 
 
+class GenerateFromIdeaBody(BaseModel):
+    """Body for generate-from-description endpoints (constitution, architecture)."""
+    description: str = ""
+
+
 class FileApplyBody(BaseModel):
     """Apply a generated file to disk."""
     filepath: str = Field(..., min_length=1)

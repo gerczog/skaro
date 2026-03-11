@@ -66,6 +66,17 @@ check_venv_module() {
     "$1" -m venv --help >/dev/null 2>&1
 }
 
+# ── Create CLI shim if needed ───────────────────
+create_skaro_shim() {
+    shim_path="$1"
+    python_bin="$2"
+    cat > "$shim_path" <<EOF
+#!/bin/sh
+exec "$python_bin" -m skaro_cli.main "\$@"
+EOF
+    chmod +x "$shim_path"
+}
+
 # ── Resolve installation target ─────────────────
 resolve_install_target() {
     if [ -n "$INSTALL_TARGET" ]; then
@@ -110,17 +121,29 @@ main() {
     # 4. Install / upgrade skaro
     INSTALL_TARGET_RESOLVED=$(resolve_install_target)
     info "Installing $PACKAGE_NAME from $INSTALL_TARGET_RESOLVED (this may take a moment)..."
-    "$VENV_DIR/bin/pip" install --upgrade pip >/dev/null 2>&1 || true
-    "$VENV_DIR/bin/pip" install --upgrade "$INSTALL_TARGET_RESOLVED" 2>&1 | tail -1
-    installed_version=$("$VENV_DIR/bin/pip" show "$PACKAGE_NAME" 2>/dev/null | grep "^Version:" | cut -d' ' -f2)
+    INSTALL_LOG="$SKARO_HOME/install.log"
+    "$VENV_DIR/bin/python" -m pip install --upgrade pip >/dev/null 2>&1 || true
+    if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
+        warn "Install failed. Last log lines:"
+        tail -40 "$INSTALL_LOG" >&2 || true
+        fail "pip install failed (full log: $INSTALL_LOG)"
+    fi
+    tail -1 "$INSTALL_LOG" || true
+    installed_version=$("$VENV_DIR/bin/python" -c "import importlib.metadata as m; print(m.version('skaro'))" 2>/dev/null || true)
     ok "Installed $PACKAGE_NAME $installed_version"
 
     # 5. Symlink into BIN_DIR
     mkdir -p "$BIN_DIR"
     SKARO_BIN_SRC="$VENV_DIR/bin/skaro"
 
-    if [ ! -f "$SKARO_BIN_SRC" ]; then
-        fail "Binary not found at $SKARO_BIN_SRC — package may have failed to install."
+    if [ ! -x "$SKARO_BIN_SRC" ]; then
+        # Fallback: package may be installed but console script wasn't generated.
+        if "$VENV_DIR/bin/python" -c "import skaro_cli.main" >/dev/null 2>&1; then
+            warn "Console script was not generated; creating shim at $SKARO_BIN_SRC"
+            create_skaro_shim "$SKARO_BIN_SRC" "$VENV_DIR/bin/python"
+        else
+            fail "Binary not found at $SKARO_BIN_SRC — package may have failed to install."
+        fi
     fi
 
     ln -sf "$SKARO_BIN_SRC" "$BIN_DIR/skaro"

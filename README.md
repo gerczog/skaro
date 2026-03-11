@@ -74,8 +74,10 @@ curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
 
 ```sh
 # Install from any custom pip target (takes priority)
-SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main" \
+export SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main"
 curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
+hash -r
+skaro init
 ```
 
 ### Install upstream

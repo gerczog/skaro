@@ -38,7 +38,9 @@ class ProjectFixPhase(ConversationalFixBase):
         extra_context = await asyncio.to_thread(self._gather_context, scope_tasks)
 
         response, proposed, file_diffs, updated_conv = await self._run_fix(
-            user_message, conversation, extra_context,
+            user_message,
+            conversation,
+            extra_context,
         )
 
         # Persist

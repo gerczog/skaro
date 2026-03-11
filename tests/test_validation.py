@@ -17,13 +17,12 @@ from skaro_web.api.schemas import (
     TaskCreateBody,
 )
 
-
 # ═══════════════════════════════════════════════════
 # _validate_project_path
 # ═══════════════════════════════════════════════════
 
-class TestValidateProjectPath:
 
+class TestValidateProjectPath:
     def test_valid_relative_path(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -71,24 +70,27 @@ class TestValidateProjectPath:
 # Pydantic schemas
 # ═══════════════════════════════════════════════════
 
-class TestFileApplyBody:
 
+class TestFileApplyBody:
     def test_valid_filepath(self):
         body = FileApplyBody(filepath="src/main.py", content="hello")
         assert body.filepath == "src/main.py"
 
     def test_rejects_empty_filepath(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             FileApplyBody(filepath="", content="hello")
 
     def test_rejects_dot_dot(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError, match="must not contain"):
             FileApplyBody(filepath="../etc/passwd", content="hack")
 
     def test_rejects_absolute_path(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError, match="must be relative"):
             FileApplyBody(filepath="/etc/passwd", content="hack")
 
@@ -98,7 +100,6 @@ class TestFileApplyBody:
 
 
 class TestAdrStatusBody:
-
     def test_valid_statuses(self):
         for status in ("proposed", "accepted", "deprecated", "superseded"):
             body = AdrStatusBody(status=status)
@@ -106,22 +107,23 @@ class TestAdrStatusBody:
 
     def test_rejects_invalid_status(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError, match="Invalid ADR status"):
             AdrStatusBody(status="invalid")
 
 
 class TestArchAcceptBody:
-
     def test_rejects_empty_architecture(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             ArchAcceptBody(proposed_architecture="")
 
 
 class TestTaskCreateBody:
-
     def test_rejects_empty_name(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             TaskCreateBody(name="")
 
@@ -131,9 +133,9 @@ class TestTaskCreateBody:
 
 
 class TestFixBody:
-
     def test_rejects_empty_message(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             FixBody(message="")
 
@@ -143,7 +145,6 @@ class TestFixBody:
 
 
 class TestConfigUpdateBody:
-
     def test_defaults(self):
         body = ConfigUpdateBody()
         assert body.llm.provider == "anthropic"
@@ -158,5 +159,6 @@ class TestConfigUpdateBody:
 
     def test_rejects_invalid_temperature(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             ConfigUpdateBody(llm={"temperature": 5.0})

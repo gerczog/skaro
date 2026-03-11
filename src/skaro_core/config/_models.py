@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 SKARO_DIR = ".skaro"
 CONFIG_FILENAME = "config.yaml"
 SECRETS_FILENAME = "secrets.yaml"
@@ -17,7 +16,13 @@ GLOBAL_CONFIG_DIR = Path.home() / ".skaro"
 
 # Roles and which phases they cover
 ROLE_PHASES: dict[str, list[str]] = {
-    "architect": ["architecture", "devplan", "plan", "import_analyze", "constitution_gen"],
+    "architect": [
+        "architecture",
+        "devplan",
+        "plan",
+        "import_analyze",
+        "constitution_gen",
+    ],
     "coder": ["implement", "fix"],
     "reviewer": ["tests", "clarify"],
 }
@@ -143,8 +148,12 @@ class SkaroConfig:
                     model=rc.model,
                     api_key_env=api_key_env or "",
                     base_url=base_url,
-                    max_tokens=rc.max_tokens if rc.max_tokens is not None else self.llm.max_tokens,
-                    temperature=rc.temperature if rc.temperature is not None else self.llm.temperature,
+                    max_tokens=(
+                        rc.max_tokens if rc.max_tokens is not None else self.llm.max_tokens
+                    ),
+                    temperature=(
+                        rc.temperature if rc.temperature is not None else self.llm.temperature
+                    ),
                 )
         return self.llm
 
@@ -198,8 +207,7 @@ class SkaroConfig:
 
         if self.verify_commands:
             d["verify_commands"] = [
-                {"name": vc.name, "command": vc.command}
-                for vc in self.verify_commands
+                {"name": vc.name, "command": vc.command} for vc in self.verify_commands
             ]
 
         return d

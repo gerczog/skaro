@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC
 from typing import Any
 
 import yaml
@@ -99,11 +100,11 @@ class StateMixin:
 
     def mark_imported(self, *, mode: str, source_commit: str = "") -> None:
         """Record that the project was initialized via import (auto or manual)."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         state = self._load_state()
         state["import_mode"] = mode
-        state["import_timestamp"] = datetime.now(timezone.utc).isoformat()
+        state["import_timestamp"] = datetime.now(UTC).isoformat()
         state["import_source_commit"] = source_commit
         # Reset approval flags so user is prompted to review generated artifacts
         state["constitution_validated"] = False

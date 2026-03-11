@@ -79,9 +79,7 @@ class ConversationalFixBase(BasePhase):
                 if content.strip()
             ]
             if ctx_parts:
-                messages.append(
-                    LLMMessage(role="user", content="\n\n---\n\n".join(ctx_parts))
-                )
+                messages.append(LLMMessage(role="user", content="\n\n---\n\n".join(ctx_parts)))
                 messages.append(
                     LLMMessage(
                         role="assistant",
@@ -104,7 +102,9 @@ class ConversationalFixBase(BasePhase):
 
         # ── LLM call ──
         response_content = await self._stream_collect(
-            messages, min_tokens=16384, task=task,
+            messages,
+            min_tokens=16384,
+            task=task,
         )
 
         # ── Parse response ──
@@ -196,9 +196,7 @@ class ConversationalFixBase(BasePhase):
             existing = f"{title}\n"
 
         ts = datetime.now().strftime("%Y-%m-%d %H:%M")
-        file_list = (
-            ", ".join(f"`{f}`" for f in files.keys()) if files else "(no files)"
-        )
+        file_list = ", ".join(f"`{f}`" for f in files.keys()) if files else "(no files)"
 
         entry = (
             f"\n---\n\n"

@@ -199,21 +199,15 @@ class RepoScanner:
         all_files = self._collect_all_files(result)
         self._build_tree(result)
 
-        total_tokens = sum(
-            estimate_tokens(content) for _, content in all_files
-        )
+        total_tokens = sum(estimate_tokens(content) for _, content in all_files)
         result.estimated_tokens = total_tokens
 
         if total_tokens <= self.token_limit:
             result.files = dict(all_files)
         else:
             result.sampled = True
-            result.files, result.skipped_paths = self._smart_sample(
-                all_files, result
-            )
-            result.estimated_tokens = sum(
-                estimate_tokens(c) for c in result.files.values()
-            )
+            result.files, result.skipped_paths = self._smart_sample(all_files, result)
+            result.estimated_tokens = sum(estimate_tokens(c) for c in result.files.values())
 
         return result
 
@@ -302,7 +296,6 @@ class RepoScanner:
         Walks the filesystem independently of which files were collected,
         so the tree is always complete even when sampling is applied.
         """
-        seen_dirs: set[str] = set()
         entries: list[str] = []
 
         for path in sorted(self.root.rglob("*")):
@@ -361,15 +354,47 @@ class RepoScanner:
             score = 0
             if name in _MANIFEST_NAMES:
                 score += 1000
-            _entry = {"main", "index", "app", "server", "cli", "__main__", "manage", "start"}
+            _entry = {
+                "main",
+                "index",
+                "app",
+                "server",
+                "cli",
+                "__main__",
+                "manage",
+                "start",
+            }
             if stem in _entry:
                 score += 800
-            _api = {"route", "routes", "controller", "controllers", "handler", "handlers",
-                    "router", "routers", "view", "views", "endpoint", "endpoints", "api"}
+            _api = {
+                "route",
+                "routes",
+                "controller",
+                "controllers",
+                "handler",
+                "handlers",
+                "router",
+                "routers",
+                "view",
+                "views",
+                "endpoint",
+                "endpoints",
+                "api",
+            }
             if any(k in stem for k in _api) or any(k in rel for k in _api):
                 score += 600
-            _model = {"model", "models", "schema", "schemas", "entity", "entities",
-                      "type", "types", "dto", "dtos"}
+            _model = {
+                "model",
+                "models",
+                "schema",
+                "schemas",
+                "entity",
+                "entities",
+                "type",
+                "types",
+                "dto",
+                "dtos",
+            }
             if any(k in stem for k in _model) or any(k in rel for k in _model):
                 score += 500
             # Hub: count import statements

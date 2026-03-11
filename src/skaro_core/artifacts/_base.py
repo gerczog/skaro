@@ -33,9 +33,7 @@ class _ArtifactManagerBase:
         stripped = stripped.strip()
         return len(stripped) > min_chars
 
-    def _is_template_content(
-        self, content: str, template_name: str, task: str = ""
-    ) -> bool:
+    def _is_template_content(self, content: str, template_name: str, task: str = "") -> bool:
         """Check if content is still the unmodified template."""
         template_path = self.skaro / "templates" / template_name
         if not template_path.exists():

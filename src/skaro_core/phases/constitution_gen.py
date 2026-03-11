@@ -10,6 +10,7 @@ def _default_example_constitution() -> str:
     """Load a generic example constitution (e.g. python-cli preset) for empty-input fallback."""
     try:
         from skaro_core.artifacts import TEMPLATES_PKG_DIR
+
         if TEMPLATES_PKG_DIR:
             preset = TEMPLATES_PKG_DIR / "constitution-presets" / "python-cli.md"
             if preset.exists():
@@ -61,7 +62,9 @@ class ConstitutionGenPhase(BasePhase):
         """Run constitution generation. Uses description and/or existing_constitution."""
         description = (task or "").strip() or (kwargs.get("description") or "").strip()
         existing = (kwargs.get("existing_constitution") or "").strip()
-        default_example = (kwargs.get("default_example") or "").strip() or _default_example_constitution()
+        default_example = (
+            kwargs.get("default_example") or ""
+        ).strip() or _default_example_constitution()
         content = await self.generate_from_description(
             description=description,
             existing_constitution=existing,
@@ -71,7 +74,11 @@ class ConstitutionGenPhase(BasePhase):
             fallback = existing if existing else default_example
             return PhaseResult(
                 success=bool(fallback),
-                message="LLM returned no content; using existing or example." if fallback else "No content available.",
+                message=(
+                    "LLM returned no content; using existing or example."
+                    if fallback
+                    else "No content available."
+                ),
                 data={"content": fallback},
             )
         return PhaseResult(success=True, message="", data={"content": content})
@@ -82,7 +89,7 @@ class ConstitutionGenPhase(BasePhase):
         existing_constitution: str = "",
         default_example: str = "",
     ) -> str:
-        """Generate or refine constitution. Pass existing + user message, or use default example when empty."""
+        """Generate or refine constitution from existing + user message or default example."""
         prompt_template = self._load_prompt_template("constitution-from-idea")
         if not prompt_template:
             return existing_constitution or default_example
@@ -93,15 +100,21 @@ class ConstitutionGenPhase(BasePhase):
         if existing_constitution.strip():
             user = f"Current constitution:\n\n{existing_constitution}\n\n"
             if description:
-                user += f"User request: {description}\n\nReturn ONLY the updated constitution document (no code fence, no preamble)."
+                user += (
+                    f"User request: {description}\n\n"
+                    "Return ONLY the updated constitution document (no code fence, no preamble)."
+                )
             else:
-                user += "Refine and improve this constitution following best practices. Return ONLY the constitution document."
+                user += (
+                    "Refine and improve this constitution following best practices. "
+                    "Return ONLY the constitution document."
+                )
         elif description.strip():
             user = description.strip()
         else:
             user = (
                 "The user provided no description. Generate a general-purpose project Constitution "
-                "using the structure below as reference. Adapt it for a generic software project.\n\n"
+                "using the structure below as reference. Adapt for a generic software project.\n\n"
                 f"Structure reference:\n\n{example}\n\nReturn ONLY the constitution document."
             )
 
@@ -114,6 +127,7 @@ class ConstitutionGenPhase(BasePhase):
         ]
         response = await self._stream_collect(messages, min_tokens=4096)
         from skaro_core.phases._import_parser import _unwrap_fenced
+
         raw = _unwrap_fenced(response.strip()) if response else ""
         if raw and raw.strip():
             return raw

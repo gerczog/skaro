@@ -11,11 +11,8 @@ from typing import Any
 from skaro_core.llm.base import LLMMessage
 from skaro_core.phases.base import BasePhase, PhaseResult
 
-
 # Marker that separates review from proposed architecture in LLM response.
-_PROPOSED_HEADING_RE = re.compile(
-    r"^##\s+Proposed\s+Architecture", re.IGNORECASE | re.MULTILINE
-)
+_PROPOSED_HEADING_RE = re.compile(r"^##\s+Proposed\s+Architecture", re.IGNORECASE | re.MULTILINE)
 
 
 class ArchitecturePhase(BasePhase):
@@ -141,9 +138,7 @@ class ArchitecturePhase(BasePhase):
         if prompt_template:
             prompt = prompt_template.replace(
                 "{domain_description}", domain_description or "(not provided)"
-            ).replace(
-                "{architecture_draft}", architecture_draft
-            )
+            ).replace("{architecture_draft}", architecture_draft)
         else:
             prompt = (
                 f"Review this architecture as a senior architect.\n\n"
@@ -214,8 +209,7 @@ class ArchitecturePhase(BasePhase):
         today = _date.today().isoformat()
         review_section = f"Architecture review feedback:\n{review}" if review.strip() else ""
         prompt = (
-            prompt
-            .replace("{architecture}", architecture)
+            prompt.replace("{architecture}", architecture)
             .replace("{review_section}", review_section)
             .replace("{adr_template}", adr_template)
             .replace("{today}", today)

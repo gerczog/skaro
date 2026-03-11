@@ -16,9 +16,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any
 
 from fastapi import Request, WebSocket
 
@@ -30,6 +31,7 @@ logger = logging.getLogger("skaro_web")
 # ═══════════════════════════════════════════════════
 # Connection manager (replaces global list)
 # ═══════════════════════════════════════════════════
+
 
 class ConnectionManager:
     """Thread-safe WebSocket connection manager."""
@@ -65,6 +67,7 @@ class ConnectionManager:
 # FastAPI Depends() providers
 # ═══════════════════════════════════════════════════
 
+
 def get_project_root(request: Request) -> Path:
     """Inject project root path."""
     return request.app.state.project_root
@@ -84,6 +87,7 @@ def get_ws_manager(request: Request) -> ConnectionManager:
 # Broadcast shortcut (for use inside routers)
 # ═══════════════════════════════════════════════════
 
+
 async def broadcast(request: Request, data: dict[str, Any]) -> None:
     """Broadcast a message to all connected WebSocket clients."""
     manager: ConnectionManager = request.app.state.ws_manager
@@ -93,6 +97,7 @@ async def broadcast(request: Request, data: dict[str, Any]) -> None:
 # ═══════════════════════════════════════════════════
 # LLM phase context manager
 # ═══════════════════════════════════════════════════
+
 
 @asynccontextmanager
 async def llm_phase(
@@ -104,8 +109,10 @@ async def llm_phase(
     await ws_manager.broadcast({"event": "llm:start", "phase": phase_name})
 
     if phase_obj is not None:
+
         async def _on_chunk(text: str) -> None:
             await ws_manager.broadcast({"event": "llm:chunk", "text": text})
+
         phase_obj.on_stream_chunk = _on_chunk
 
     try:

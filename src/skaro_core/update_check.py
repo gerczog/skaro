@@ -134,6 +134,7 @@ def _is_newer(latest: str, current: str) -> bool:
 
     # Fallback: simple tuple comparison for X.Y.Z versions
     try:
+
         def _parts(v: str) -> tuple[int, ...]:
             return tuple(int(x) for x in v.strip().split("."))
 
@@ -159,9 +160,9 @@ def _read_cache() -> UpdateCheckResult | None:
         checked_at = data.get("checked_at", 0)
         if time.time() - checked_at > CACHE_TTL_SECONDS:
             return None
-        return UpdateCheckResult(**{
-            k: v for k, v in data.items() if k in UpdateCheckResult.__dataclass_fields__
-        })
+        return UpdateCheckResult(
+            **{k: v for k, v in data.items() if k in UpdateCheckResult.__dataclass_fields__}
+        )
     except Exception:
         return None
 

@@ -7,7 +7,14 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Request
 
 from skaro_core.artifacts import ArtifactManager
-from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase, ConnectionManager
+from skaro_web.api.deps import (
+    ConnectionManager,
+    broadcast,
+    get_am,
+    get_project_root,
+    get_ws_manager,
+    llm_phase,
+)
 from skaro_web.api.schemas import (
     ContentBody,
     DevPlanConfirmBody,
@@ -40,6 +47,7 @@ async def get_devplan_milestones(am: ArtifactManager = Depends(get_am)):
         return {"milestones": []}
 
     from skaro_core.phases._devplan_parser import parse_milestones
+
     milestones = parse_milestones(content)
     return {"milestones": milestones}
 

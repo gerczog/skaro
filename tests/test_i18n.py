@@ -66,6 +66,7 @@ class TestTranslate:
     def test_lazy_init(self):
         """t() auto-initializes locale if _strings is empty."""
         import skaro_core.i18n as mod
+
         old_strings = mod._strings
         mod._strings = {}
         try:

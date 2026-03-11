@@ -18,18 +18,14 @@ class MilestonesMixin:
     def milestone_exists(self, milestone: str) -> bool:
         return self.milestone_dir(milestone).is_dir()
 
-    def create_milestone(
-        self, milestone: str, title: str = "", description: str = ""
-    ) -> Path:
+    def create_milestone(self, milestone: str, title: str = "", description: str = "") -> Path:
         """Create a milestone directory with milestone.md."""
         mdir = self.milestone_dir(milestone)
         mdir.mkdir(parents=True, exist_ok=True)
 
         md_path = mdir / "milestone.md"
         if not md_path.exists():
-            display_title = (
-                title or milestone.split("-", 1)[-1].replace("-", " ").title()
-            )
+            display_title = title or milestone.split("-", 1)[-1].replace("-", " ").title()
             content = (
                 f"# {display_title}\n\n"
                 f"{description}\n\n"

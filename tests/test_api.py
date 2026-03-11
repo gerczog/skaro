@@ -50,8 +50,8 @@ def uninit_client(uninit_project) -> TestClient:
 # Status
 # ═══════════════════════════════════════════════════
 
-class TestStatusAPI:
 
+class TestStatusAPI:
     def test_status_uninitialized(self, uninit_client):
         resp = uninit_client.get("/api/status")
         assert resp.status_code == 200
@@ -91,8 +91,8 @@ class TestStatusAPI:
 # Constitution
 # ═══════════════════════════════════════════════════
 
-class TestConstitutionAPI:
 
+class TestConstitutionAPI:
     def test_get_empty_constitution(self, client):
         resp = client.get("/api/constitution")
         assert resp.status_code == 200
@@ -120,8 +120,8 @@ class TestConstitutionAPI:
 # Architecture
 # ═══════════════════════════════════════════════════
 
-class TestArchitectureAPI:
 
+class TestArchitectureAPI:
     def test_get_architecture(self, client):
         resp = client.get("/api/architecture")
         assert resp.status_code == 200
@@ -176,8 +176,8 @@ class TestArchitectureAPI:
 # DevPlan
 # ═══════════════════════════════════════════════════
 
-class TestDevPlanAPI:
 
+class TestDevPlanAPI:
     def test_get_empty_devplan(self, client):
         resp = client.get("/api/devplan")
         assert resp.status_code == 200
@@ -194,8 +194,8 @@ class TestDevPlanAPI:
 # Tasks
 # ═══════════════════════════════════════════════════
 
-class TestTasksAPI:
 
+class TestTasksAPI:
     def _setup_milestone(self, client):
         """Create a milestone so we can create tasks."""
         # Directly init via AM since there's no milestone-create endpoint
@@ -209,10 +209,13 @@ class TestTasksAPI:
 
     def test_create_task(self, client):
         self._setup_milestone(client)
-        resp = client.post("/api/tasks", json={
-            "name": "auth-setup",
-            "milestone": "01-foundation",
-        })
+        resp = client.post(
+            "/api/tasks",
+            json={
+                "name": "auth-setup",
+                "milestone": "01-foundation",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["success"] is True
@@ -254,8 +257,8 @@ class TestTasksAPI:
 # Config
 # ═══════════════════════════════════════════════════
 
-class TestConfigAPI:
 
+class TestConfigAPI:
     def test_get_config(self, client):
         resp = client.get("/api/config")
         assert resp.status_code == 200
@@ -266,10 +269,13 @@ class TestConfigAPI:
         assert "_role_phases" in data
 
     def test_update_config(self, client):
-        resp = client.put("/api/config", json={
-            "llm": {"provider": "openai", "model": "gpt-4o"},
-            "lang": "ru",
-        })
+        resp = client.put(
+            "/api/config",
+            json={
+                "llm": {"provider": "openai", "model": "gpt-4o"},
+                "lang": "ru",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
@@ -284,17 +290,20 @@ class TestConfigAPI:
 # Validation / Error handling
 # ═══════════════════════════════════════════════════
 
-class TestValidationErrors:
 
+class TestValidationErrors:
     def test_file_apply_rejects_traversal(self, client, init_project):
         am = ArtifactManager(init_project)
         am.create_milestone("01-foundation")
         am.create_task("01-foundation", "auth")
 
-        resp = client.post("/api/tasks/auth/apply-file", json={
-            "filepath": "../../../etc/passwd",
-            "content": "hacked",
-        })
+        resp = client.post(
+            "/api/tasks/auth/apply-file",
+            json={
+                "filepath": "../../../etc/passwd",
+                "content": "hacked",
+            },
+        )
         assert resp.status_code == 422  # Pydantic catches .. in validator
 
     def test_fix_apply_rejects_traversal(self, client, init_project):
@@ -302,28 +311,40 @@ class TestValidationErrors:
         am.create_milestone("01-foundation")
         am.create_task("01-foundation", "auth")
 
-        resp = client.post("/api/tasks/auth/fix/apply", json={
-            "filepath": "../../etc/shadow",
-            "content": "hacked",
-        })
+        resp = client.post(
+            "/api/tasks/auth/fix/apply",
+            json={
+                "filepath": "../../etc/shadow",
+                "content": "hacked",
+            },
+        )
         assert resp.status_code == 422
 
     def test_fix_rejects_empty_message(self, client):
-        resp = client.post("/api/tasks/auth/fix", json={
-            "message": "",
-        })
+        resp = client.post(
+            "/api/tasks/auth/fix",
+            json={
+                "message": "",
+            },
+        )
         assert resp.status_code == 422
 
     def test_adr_status_rejects_invalid(self, client):
-        resp = client.patch("/api/architecture/adrs/1/status", json={
-            "status": "invalid_status",
-        })
+        resp = client.patch(
+            "/api/architecture/adrs/1/status",
+            json={
+                "status": "invalid_status",
+            },
+        )
         assert resp.status_code == 422
 
     def test_config_rejects_bad_temperature(self, client):
-        resp = client.put("/api/config", json={
-            "llm": {"temperature": 99.0},
-        })
+        resp = client.put(
+            "/api/config",
+            json={
+                "llm": {"temperature": 99.0},
+            },
+        )
         assert resp.status_code == 422
 
 
@@ -366,15 +387,21 @@ class TestAdrLifecycleAPI:
         num = resp.json()["number"]
 
         # Update content
-        resp = client.put(f"/api/architecture/adrs/{num}", json={
-            "content": "# ADR-001: Use PostgreSQL\n\n## Status: proposed\n\nWe choose PG.",
-        })
+        resp = client.put(
+            f"/api/architecture/adrs/{num}",
+            json={
+                "content": "# ADR-001: Use PostgreSQL\n\n## Status: proposed\n\nWe choose PG.",
+            },
+        )
         assert resp.json()["success"] is True
 
         # Change status
-        resp = client.patch(f"/api/architecture/adrs/{num}/status", json={
-            "status": "accepted",
-        })
+        resp = client.patch(
+            f"/api/architecture/adrs/{num}/status",
+            json={
+                "status": "accepted",
+            },
+        )
         assert resp.json()["success"] is True
 
         # Verify in list

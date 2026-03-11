@@ -15,7 +15,6 @@ runs Architecture Review (same as in the normal pipeline).
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 from typing import Any
 
 from skaro_core.phases.base import BasePhase, PhaseResult
@@ -59,9 +58,7 @@ class ImportAnalyzePhase(BasePhase):
             source_commit (str): Git HEAD commit hash at import time (optional).
         """
         project_name: str = (
-            kwargs.get("project_name")
-            or self.config.project_name
-            or self.artifacts.root.name
+            kwargs.get("project_name") or self.config.project_name or self.artifacts.root.name
         )
         source_commit: str = kwargs.get("source_commit", "")
 
@@ -77,9 +74,7 @@ class ImportAnalyzePhase(BasePhase):
         files_text = scan.format_files()
 
         # ── 2. LLM Call 1: Constitution ──────────────────────────────────
-        constitution = await self._generate_constitution(
-            project_name, tree_text, files_text
-        )
+        constitution = await self._generate_constitution(project_name, tree_text, files_text)
         if not constitution.strip():
             return PhaseResult(
                 success=False,
@@ -92,6 +87,7 @@ class ImportAnalyzePhase(BasePhase):
 
         # Strip code fences if the LLM wrapped the constitution
         from skaro_core.phases._import_parser import _unwrap_fenced
+
         constitution = _unwrap_fenced(constitution)
 
         am.constitution_path.write_text(constitution, encoding="utf-8")
@@ -102,9 +98,7 @@ class ImportAnalyzePhase(BasePhase):
         # Call 1 consumed most of the budget; give the provider time to reset.
         await asyncio.sleep(5)
 
-        architecture = await self._generate_architecture(
-            project_name, tree_text, constitution
-        )
+        architecture = await self._generate_architecture(project_name, tree_text, constitution)
         if not architecture.strip():
             return PhaseResult(
                 success=False,
@@ -157,25 +151,20 @@ class ImportAnalyzePhase(BasePhase):
 
     # ── LLM call helpers ─────────────────────────────────────────────────
 
-    async def _generate_constitution(
-        self, project_name: str, tree: str, files: str
-    ) -> str:
+    async def _generate_constitution(self, project_name: str, tree: str, files: str) -> str:
         """LLM Call 1: Generate constitution from repo contents."""
         prompt_template = self._load_prompt_template("repo-constitution")
         if not prompt_template:
             return ""
 
         prompt = (
-            prompt_template
-            .replace("{project_name}", project_name)
+            prompt_template.replace("{project_name}", project_name)
             .replace("{tree}", tree)
             .replace("{files}", files)
         )
 
         messages = self._build_messages_no_constitution(prompt)
-        return await self._llm_collect_with_limit(
-            messages, _CONSTITUTION_TOKEN_LIMITS
-        )
+        return await self._llm_collect_with_limit(messages, _CONSTITUTION_TOKEN_LIMITS)
 
     async def _generate_architecture(
         self,
@@ -194,19 +183,17 @@ class ImportAnalyzePhase(BasePhase):
             return ""
 
         prompt = (
-            prompt_template
-            .replace("{project_name}", project_name)
+            prompt_template.replace("{project_name}", project_name)
             .replace("{tree}", tree)
             .replace("{constitution}", constitution)
         )
 
         messages = self._build_messages_no_constitution(prompt)
-        response = await self._llm_collect_with_limit(
-            messages, _ARCHITECTURE_TOKEN_LIMITS
-        )
+        response = await self._llm_collect_with_limit(messages, _ARCHITECTURE_TOKEN_LIMITS)
 
         # Strip code fences if the LLM wrapped the response
         from skaro_core.phases._import_parser import _unwrap_fenced
+
         return _unwrap_fenced(response.strip())
 
     # ── Private helpers ──────────────────────────────────────────────────
@@ -232,8 +219,11 @@ class ImportAnalyzePhase(BasePhase):
         ]
 
     async def _llm_collect_with_limit(
-        self, messages: list, limits: dict[str, int],
-        *, max_retries: int = 3,
+        self,
+        messages: list,
+        limits: dict[str, int],
+        *,
+        max_retries: int = 3,
     ) -> str:
         """Stream-collect LLM response with a per-call max_tokens limit.
 
@@ -253,7 +243,7 @@ class ImportAnalyzePhase(BasePhase):
                     return await self._stream_collect(messages)
                 except LLMError as exc:
                     if exc.retriable and attempt < max_retries:
-                        wait = 30 * (2 ** attempt)  # 30s, 60s, 120s
+                        wait = 30 * (2**attempt)  # 30s, 60s, 120s
                         if self.on_stream_chunk:
                             self.on_stream_chunk(
                                 f"\n⏳ Rate limited. Retrying in {wait}s "

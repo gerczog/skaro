@@ -86,9 +86,7 @@ class ArchitectureMixin:
         template = self.skaro / "templates" / "adr-template.md"
         if template.exists():
             content = template.read_text(encoding="utf-8")
-            content = content.replace("<NNN>", f"{number:03d}").replace(
-                "<название решения>", title
-            )
+            content = content.replace("<NNN>", f"{number:03d}").replace("<название решения>", title)
             path.write_text(content, encoding="utf-8")
         else:
             path.write_text(f"# ADR-{number:03d}: {title}\n", encoding="utf-8")
@@ -127,9 +125,7 @@ class ArchitectureMixin:
                 continue
             title = meta.get("title", adr_path.stem)
             number = meta.get("number", 0)
-            m = re.search(
-                r"## Decision\s*\n(.*?)(?=\n## |\Z)", content, re.DOTALL
-            )
+            m = re.search(r"## Decision\s*\n(.*?)(?=\n## |\Z)", content, re.DOTALL)
             decision = m.group(1).strip() if m else ""
             if len(decision) > 150:
                 decision = decision[:147] + "..."
@@ -144,9 +140,7 @@ class ArchitectureMixin:
     def update_adr_status(self, number: int, new_status: str) -> Path | None:
         valid = {"proposed", "accepted", "deprecated", "superseded"}
         if new_status not in valid:
-            raise ValueError(
-                f"Invalid ADR status: {new_status}. Must be one of {valid}"
-            )
+            raise ValueError(f"Invalid ADR status: {new_status}. Must be one of {valid}")
         for adr_path in self.list_adrs():
             m = re.match(r"adr-(\d+)", adr_path.name)
             if m and int(m.group(1)) == number:

@@ -137,7 +137,7 @@ def create_app(project_root: Path | None = None) -> FastAPI:
                 "<p>When installing from PyPI or <code>pip install git+...</code>, the frontend is built during install — <strong>Node.js and npm must be installed</strong> on the machine where you run <code>pip install</code>.</p>"
                 "<p><strong>Fix:</strong></p>"
                 "<ul>"
-                "<li><b>Use the install script</b> (Node 18+ and npm required) so the frontend is built: <code>export SKARO_INSTALL_TARGET=\"git+https://github.com/gerczog/skaro.git@main\"</code> then <code>curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh</code></li>"
+                '<li><b>Use the install script</b> (Node 18+ and npm required) so the frontend is built: <code>export SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main"</code> then <code>curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh</code></li>'
                 "<li>Or from the Skaro repo: <code>cd frontend && npm install && npm run build</code>, then <code>~/.skaro/venv/bin/pip install -e .</code></li>"
                 "</ul>"
                 f"<p>Looked in: <code>{STATIC_DIR}</code></p>"

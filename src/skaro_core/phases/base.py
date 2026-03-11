@@ -4,25 +4,56 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import monotonic
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 
 from skaro_core.artifacts import ArtifactManager
 from skaro_core.config import SkaroConfig, add_token_usage, load_config
-from skaro_core.llm.base import BaseLLMAdapter, LLMMessage, LLMResponse, create_llm_adapter
+from skaro_core.llm.base import (
+    BaseLLMAdapter,
+    LLMMessage,
+    LLMResponse,
+    create_llm_adapter,
+)
 
 # ── Shared constants ──────────────────────────────────────────
 SKIP_DIRS: set[str] = {
-    ".skaro", ".git", "__pycache__", "node_modules", ".venv", "venv",
-    ".tox", ".mypy_cache", ".pytest_cache", "dist", "build", ".eggs",
-    ".ruff_cache", "htmlcov", ".coverage", "coverage", "lcov-report",
+    ".skaro",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "dist",
+    "build",
+    ".eggs",
+    ".ruff_cache",
+    "htmlcov",
+    ".coverage",
+    "coverage",
+    "lcov-report",
 }
 
 SOURCE_EXTENSIONS: set[str] = {
-    ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs",
-    ".java", ".rb", ".html", ".css", ".vue", ".svelte",
+    ".py",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".go",
+    ".rs",
+    ".java",
+    ".rb",
+    ".html",
+    ".css",
+    ".vue",
+    ".svelte",
 }
 
 SKIP_BINARY_EXTENSIONS: set[str] = {".pyc", ".pyo", ".so", ".dylib"}
@@ -31,8 +62,13 @@ SKIP_BINARY_EXTENSIONS: set[str] = {".pyc", ".pyo", ".so", ".dylib"}
 class _TrackingLLMAdapter(BaseLLMAdapter):
     """Wrapper that tracks token usage from every complete()/stream() call."""
 
-    def __init__(self, inner: BaseLLMAdapter, project_root: Path | None,
-                 phase: str = "", task: str = ""):
+    def __init__(
+        self,
+        inner: BaseLLMAdapter,
+        project_root: Path | None,
+        phase: str = "",
+        task: str = "",
+    ):
         self._inner = inner
         self._project_root = project_root
         self._phase = phase
@@ -43,13 +79,15 @@ class _TrackingLLMAdapter(BaseLLMAdapter):
     def _track(self, usage: dict[str, int] | None) -> None:
         if usage:
             from skaro_core.config import ROLE_PHASES
+
             role = ""
             for r, phases in ROLE_PHASES.items():
                 if self._phase in phases:
                     role = r
                     break
             add_token_usage(
-                usage, self._project_root,
+                usage,
+                self._project_root,
                 phase=self._phase,
                 task=self._task,
                 model=self.config.model,
@@ -102,8 +140,10 @@ class BasePhase(ABC):
             llm_config = self.config.llm_for_phase(self.phase_name)
             inner = create_llm_adapter(llm_config)
             self._llm = _TrackingLLMAdapter(
-                inner, self.project_root,
-                phase=self.phase_name, task=task,
+                inner,
+                self.project_root,
+                phase=self.phase_name,
+                task=task,
             )
         return self._llm
 
@@ -141,7 +181,11 @@ class BasePhase(ABC):
         """Return language instruction string."""
         lang = self.config.lang
         lang_name = self._LANG_NAMES.get(lang, lang)
-        return f"IMPORTANT: You MUST respond entirely in {lang_name}. All explanations, comments in code, AI_NOTES, headings, and descriptions must be in {lang_name}."
+        return (
+            f"IMPORTANT: You MUST respond entirely in {lang_name}. "
+            f"All explanations, comments in code, AI_NOTES, headings, and descriptions "
+            f"must be in {lang_name}."
+        )
 
     def _build_system_message(self) -> str:
         """Build system message with language, constitution, and invariants."""
@@ -187,11 +231,12 @@ class BasePhase(ABC):
                 if content.strip():
                     context_parts.append(f"## {label}\n\n{content}")
             if context_parts:
+                messages.append(LLMMessage(role="user", content="\n\n---\n\n".join(context_parts)))
                 messages.append(
-                    LLMMessage(role="user", content="\n\n---\n\n".join(context_parts))
-                )
-                messages.append(
-                    LLMMessage(role="assistant", content="I've reviewed the context. Ready for your request.")
+                    LLMMessage(
+                        role="assistant",
+                        content="I've reviewed the context. Ready for your request.",
+                    )
                 )
 
         # Append language reminder to the actual user prompt if not English
@@ -279,7 +324,8 @@ class BasePhase(ABC):
     ) -> None:
         """Append project source files and file tree to a context dict."""
         source_files = self._collect_project_sources(
-            max_files=max_files, max_file_size=max_file_size,
+            max_files=max_files,
+            max_file_size=max_file_size,
         )
         if source_files:
             ctx["Current Project Source Files"] = self._format_source_files(source_files)
@@ -404,7 +450,9 @@ class BasePhase(ABC):
         ...
 
     async def _stream_collect(
-        self, messages: list[LLMMessage], min_tokens: int = 16384,
+        self,
+        messages: list[LLMMessage],
+        min_tokens: int = 16384,
         task: str = "",
     ) -> str:
         """Stream LLM response and collect into a single string.
@@ -450,9 +498,7 @@ class BasePhase(ABC):
         finally:
             llm.config.max_tokens = original
 
-    async def stream_run(
-        self, feature: str | None = None, **kwargs: Any
-    ) -> AsyncIterator[str]:
+    async def stream_run(self, feature: str | None = None, **kwargs: Any) -> AsyncIterator[str]:
         """Execute this phase with streaming output. Default: non-streaming fallback."""
         result = await self.run(task=feature, **kwargs)
         yield result.message

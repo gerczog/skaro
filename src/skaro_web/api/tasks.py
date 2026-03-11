@@ -10,7 +10,14 @@ from fastapi.responses import JSONResponse
 
 from skaro_core.artifacts import ArtifactManager
 from skaro_core.phases.base import BasePhase
-from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase, ConnectionManager
+from skaro_web.api.deps import (
+    ConnectionManager,
+    broadcast,
+    get_am,
+    get_project_root,
+    get_ws_manager,
+    llm_phase,
+)
 from skaro_web.api.schemas import (
     ClarifyAnswerBody,
     ClarifyDraftBody,
@@ -29,14 +36,12 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 # ── CRUD ────────────────────────────────────────
 
+
 @router.get("")
 async def get_tasks(am: ArtifactManager = Depends(get_am)):
     state = am.get_project_state()
     return {
-        "tasks": [
-            {"name": ts.name, "milestone": ts.milestone}
-            for ts in state.tasks
-        ],
+        "tasks": [{"name": ts.name, "milestone": ts.milestone} for ts in state.tasks],
         "milestones": am.list_milestones(),
     }
 
@@ -66,7 +71,10 @@ async def reorder_tasks(
     if not am.milestone_exists(payload.milestone):
         return JSONResponse(
             status_code=404,
-            content={"success": False, "message": f"Milestone '{payload.milestone}' not found."},
+            content={
+                "success": False,
+                "message": f"Milestone '{payload.milestone}' not found.",
+            },
         )
     am.save_task_order(payload.milestone, payload.tasks)
     await broadcast(request, {"event": "tasks:reordered", "milestone": payload.milestone})
@@ -138,6 +146,7 @@ async def get_task_detail(name: str, am: ArtifactManager = Depends(get_am)):
 
 # ── Task file editing ──────────────────────────────
 
+
 @router.put("/{name}/file")
 async def save_task_file(
     name: str,
@@ -177,6 +186,7 @@ async def save_stage_notes(
 
 
 # ── Clarify ─────────────────────────────────────
+
 
 @router.post("/{name}/clarify")
 async def run_clarify(
@@ -224,6 +234,7 @@ async def save_clarify_draft(
 
 # ── Plan ────────────────────────────────────────
 
+
 @router.post("/{name}/plan")
 async def run_plan(
     name: str,
@@ -241,6 +252,7 @@ async def run_plan(
 
 # ── Implement ───────────────────────────────────
 
+
 @router.post("/{name}/implement")
 async def run_implement(
     name: str,
@@ -253,10 +265,14 @@ async def run_implement(
     phase = ImplementPhase(project_root=project_root)
     async with llm_phase(ws, "implement", phase):
         result = await phase.run(task=name, stage=payload.stage, source_files=payload.source_files)
-    await ws.broadcast({
-        "event": "phase:completed" if result.success else "phase:error",
-        "task": name, "phase": "implement", "stage": payload.stage,
-    })
+    await ws.broadcast(
+        {
+            "event": "phase:completed" if result.success else "phase:error",
+            "task": name,
+            "phase": "implement",
+            "stage": payload.stage,
+        }
+    )
     return {"success": result.success, "message": result.message, "data": result.data}
 
 
@@ -287,6 +303,7 @@ async def apply_implement_file(
 
 # ── Tests ───────────────────────────────────────
 
+
 @router.post("/{name}/tests")
 async def run_tests(
     name: str,
@@ -299,10 +316,13 @@ async def run_tests(
 
     phase = TestsPhase(project_root=project_root)
     result = await phase.run(task=name)
-    await ws.broadcast({
-        "event": "phase:completed" if result.success else "phase:error",
-        "task": name, "phase": "tests",
-    })
+    await ws.broadcast(
+        {
+            "event": "phase:completed" if result.success else "phase:error",
+            "task": name,
+            "phase": "tests",
+        }
+    )
     return {"success": result.success, "message": result.message, "data": result.data}
 
 
@@ -362,13 +382,16 @@ async def complete_stage(
         stage_d = am.stage_dir(*resolved, stage_num)
         if not (stage_d / "AI_NOTES.md").exists():
             am.create_stage_notes(
-                *resolved, stage_num, f"# AI_NOTES — Stage {stage_num}\n\nManually completed."
+                *resolved,
+                stage_num,
+                f"# AI_NOTES — Stage {stage_num}\n\nManually completed.",
             )
     await broadcast(request, {"event": "stage:completed", "task": name, "stage": stage_num})
     return {"success": True}
 
 
 # ── Fix ─────────────────────────────────────────
+
 
 @router.post("/{name}/fix")
 async def run_fix(
@@ -381,7 +404,9 @@ async def run_fix(
 
     phase = FixPhase(project_root=project_root)
     async with llm_phase(ws, "fix", phase):
-        result = await phase.run(task=name, message=payload.message, conversation=payload.conversation)
+        result = await phase.run(
+            task=name, message=payload.message, conversation=payload.conversation
+        )
     if result.success:
         await ws.broadcast({"event": "fix:response", "task": name})
     return {

@@ -23,7 +23,7 @@ DASHBOARD_FILE = Path(__file__).parent.parent / "dashboard.html"
 def _git_staged_count(project_root: Path) -> int:
     """Return number of staged files in git, 0 if not a repo."""
     try:
-        from git import InvalidGitRepositoryError, Repo
+        from git import Repo
 
         repo = Repo(project_root)
         return len(list(repo.index.diff("HEAD")))
@@ -38,6 +38,7 @@ def _review_passed(am: ArtifactManager) -> bool | None:
         return None
     try:
         import json
+
         data = json.loads(results_path.read_text(encoding="utf-8"))
         return data.get("passed")
     except (json.JSONDecodeError, OSError):
@@ -103,10 +104,18 @@ def _build_stats(project_root: Path) -> dict[str, Any]:
     tokens = load_token_usage(project_root)
     log = load_usage_log(project_root)
 
-    by_phase: dict[str, dict] = defaultdict(lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0})
-    by_task: dict[str, dict] = defaultdict(lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0})
-    by_model: dict[str, dict] = defaultdict(lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0})
-    by_role: dict[str, dict] = defaultdict(lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0})
+    by_phase: dict[str, dict] = defaultdict(
+        lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0}
+    )
+    by_task: dict[str, dict] = defaultdict(
+        lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0}
+    )
+    by_model: dict[str, dict] = defaultdict(
+        lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0}
+    )
+    by_role: dict[str, dict] = defaultdict(
+        lambda: {"requests": 0, "input_tokens": 0, "output_tokens": 0}
+    )
 
     for e in log:
         inp = e.get("input_tokens", 0)
@@ -144,8 +153,20 @@ def _build_stats(project_root: Path) -> dict[str, Any]:
                 ext = path.suffix.lower()
                 file_counts[ext] += 1
                 if ext in {
-                    ".py", ".js", ".ts", ".jsx", ".tsx", ".svelte", ".vue",
-                    ".go", ".rs", ".java", ".rb", ".css", ".html", ".md",
+                    ".py",
+                    ".js",
+                    ".ts",
+                    ".jsx",
+                    ".tsx",
+                    ".svelte",
+                    ".vue",
+                    ".go",
+                    ".rs",
+                    ".java",
+                    ".rb",
+                    ".css",
+                    ".html",
+                    ".md",
                 }:
                     try:
                         total_lines += sum(1 for _ in open(path, encoding="utf-8", errors="ignore"))
@@ -167,6 +188,7 @@ def _build_stats(project_root: Path) -> dict[str, Any]:
 
 
 # ── Endpoints ───────────────────────────────────
+
 
 @router.get("/status")
 async def get_status(
@@ -229,8 +251,6 @@ async def debug_static():
     }
     if STATIC_DIR.is_dir():
         info["static_contents"] = sorted(
-            str(p.relative_to(STATIC_DIR))
-            for p in STATIC_DIR.rglob("*")
-            if p.is_file()
+            str(p.relative_to(STATIC_DIR)) for p in STATIC_DIR.rglob("*") if p.is_file()
         )[:30]
     return info

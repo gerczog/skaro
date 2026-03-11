@@ -5,8 +5,6 @@ This is the most fragile code in the project — regex + JSON parsing of LLM out
 
 from __future__ import annotations
 
-import pytest
-
 from skaro_core.phases._devplan_parser import (
     make_slug,
     parse_milestones,
@@ -15,7 +13,6 @@ from skaro_core.phases._devplan_parser import (
     wrap_legacy_features,
 )
 from skaro_core.phases._devplan_prompts import build_devplan_markdown
-
 
 # ═══════════════════════════════════════════════════
 # make_slug
@@ -53,7 +50,7 @@ class TestMakeSlug:
 
 class TestParseMilestonesJSON:
     def test_standard_fenced_json(self):
-        response = '''Here is the plan:
+        response = """Here is the plan:
 ```json
 [
   {
@@ -73,7 +70,7 @@ class TestParseMilestonesJSON:
   }
 ]
 ```
-'''
+"""
         ms = parse_milestones(response)
         assert len(ms) == 2
         assert ms[0]["milestone_slug"] == "01-foundation"
@@ -83,7 +80,7 @@ class TestParseMilestonesJSON:
 
     def test_nested_arrays_in_tasks(self):
         """Regression: regex must not stop at first ] inside tasks array."""
-        response = '''```json
+        response = """```json
 [
   {
     "milestone_slug": "01-core",
@@ -94,7 +91,7 @@ class TestParseMilestonesJSON:
     ]
   }
 ]
-```'''
+```"""
         ms = parse_milestones(response)
         assert len(ms) == 1
         assert len(ms[0]["tasks"]) == 2
@@ -134,12 +131,12 @@ class TestParseMilestonesJSON:
 
 class TestParseMilestonesLegacy:
     def test_flat_features_wrapped(self):
-        response = '''```json
+        response = """```json
 [
   {"name": "setup", "priority": 1, "description": "Setup project"},
   {"name": "api", "priority": 3, "description": "Build API"}
 ]
-```'''
+```"""
         ms = parse_milestones(response)
         assert len(ms) >= 1
         all_tasks = [t for m in ms for t in m.get("tasks", [])]
@@ -250,7 +247,7 @@ class TestParseMilestonesUnbalanced:
     def test_json_without_closing_fence(self):
         """LLM forgot the closing ``` — parser should still find JSON."""
         response = (
-            'Here is the plan:\n'
+            "Here is the plan:\n"
             '[{"milestone_slug": "01-core", "milestone_title": "Core", '
             '"tasks": [{"name": "init", "spec": ""}]}]'
         )
@@ -289,7 +286,9 @@ class TestParseUpdateResponse:
         assert new_ms == []
 
     def test_json_only(self):
-        content = '```json\n[{"milestone_slug": "01-new", "milestone_title": "New", "tasks": []}]\n```'
+        content = (
+            '```json\n[{"milestone_slug": "01-new", "milestone_title": "New", "tasks": []}]\n```'
+        )
         devplan, new_ms = parse_update_response(content)
         assert devplan == ""
         assert len(new_ms) == 1

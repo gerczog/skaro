@@ -225,8 +225,10 @@ def _try_yaml_parse(section: str) -> list[dict[str, str]]:
     result = []
     for item in data:
         if isinstance(item, dict) and "command" in item:
-            result.append({
-                "name": str(item.get("name", item["command"].split()[0])),
-                "command": str(item["command"]),
-            })
+            result.append(
+                {
+                    "name": str(item.get("name", item["command"].split()[0])),
+                    "command": str(item["command"]),
+                }
+            )
     return result

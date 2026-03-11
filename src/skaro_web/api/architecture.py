@@ -9,13 +9,20 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from skaro_core.artifacts import ArtifactManager
-from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase, ConnectionManager
+from skaro_web.api.deps import (
+    ConnectionManager,
+    broadcast,
+    get_am,
+    get_project_root,
+    get_ws_manager,
+    llm_phase,
+)
 from skaro_web.api.schemas import (
+    AdrCreateBody,
+    AdrStatusBody,
     ArchAcceptBody,
     ArchChatBody,
     ArchReviewBody,
-    AdrCreateBody,
-    AdrStatusBody,
     ContentBody,
     GenerateFromIdeaBody,
 )
@@ -58,10 +65,12 @@ async def get_architecture(am: ArtifactManager = Depends(get_am)):
     last_review = am.read_architecture_review()
     adrs = []
     for adr_path in am.list_adrs():
-        adrs.append({
-            "filename": adr_path.name,
-            "content": adr_path.read_text(encoding="utf-8"),
-        })
+        adrs.append(
+            {
+                "filename": adr_path.name,
+                "content": adr_path.read_text(encoding="utf-8"),
+            }
+        )
     return {
         "content": architecture,
         "has_architecture": am.has_architecture,
@@ -266,6 +275,7 @@ async def save_architecture(
 
 # ── Invariants ──────────────────────────────────
 
+
 @router.get("/invariants")
 async def get_invariants(am: ArtifactManager = Depends(get_am)):
     return {"content": am.read_invariants()}
@@ -284,20 +294,23 @@ async def update_invariants(
 
 # ── ADRs ────────────────────────────────────────
 
+
 @router.get("/adrs")
 async def get_adrs(am: ArtifactManager = Depends(get_am)):
     adrs = []
     for adr_path in am.list_adrs():
         content = adr_path.read_text(encoding="utf-8")
         meta = am.parse_adr_metadata(content, adr_path.name)
-        adrs.append({
-            "filename": adr_path.name,
-            "content": content,
-            "number": meta.get("number", 0),
-            "title": meta.get("title", adr_path.stem),
-            "status": meta.get("status", "proposed"),
-            "date": meta.get("date", ""),
-        })
+        adrs.append(
+            {
+                "filename": adr_path.name,
+                "content": content,
+                "number": meta.get("number", 0),
+                "title": meta.get("title", adr_path.stem),
+                "status": meta.get("status", "proposed"),
+                "date": meta.get("date", ""),
+            }
+        )
     return {"adrs": adrs}
 
 

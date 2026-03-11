@@ -20,6 +20,7 @@ from skaro_core.artifacts import Phase, Status
 from skaro_core.phases._command_runner import CommandRunnerMixin
 from skaro_core.phases.base import BasePhase, PhaseResult
 
+
 class ProjectReviewPhase(CommandRunnerMixin, BasePhase):
     phase_name = "project_review"
 
@@ -79,78 +80,95 @@ class ProjectReviewPhase(CommandRunnerMixin, BasePhase):
         checks: list[dict] = []
         state = self.artifacts.get_project_state()
 
-        checks.append({
-            "id": "constitution_validated",
-            "label": "Constitution validated",
-            "passed": self.artifacts.is_constitution_validated,
-            "detail": "Validated" if self.artifacts.is_constitution_validated else "Not validated",
-        })
+        checks.append(
+            {
+                "id": "constitution_validated",
+                "label": "Constitution validated",
+                "passed": self.artifacts.is_constitution_validated,
+                "detail": (
+                    "Validated" if self.artifacts.is_constitution_validated else "Not validated"
+                ),
+            }
+        )
 
         invariants = self.artifacts.read_invariants()
         has_invariants = bool(invariants and invariants.strip())
-        checks.append({
-            "id": "invariants_present",
-            "label": "Architectural invariants defined",
-            "passed": has_invariants,
-            "detail": (
-                f"{len(invariants.strip().splitlines())} lines"
-                if has_invariants else "Empty or missing"
-            ),
-        })
+        checks.append(
+            {
+                "id": "invariants_present",
+                "label": "Architectural invariants defined",
+                "passed": has_invariants,
+                "detail": (
+                    f"{len(invariants.strip().splitlines())} lines"
+                    if has_invariants
+                    else "Empty or missing"
+                ),
+            }
+        )
 
-        checks.append({
-            "id": "architecture_reviewed",
-            "label": "Architecture reviewed",
-            "passed": self.artifacts.is_architecture_reviewed,
-            "detail": "Reviewed" if self.artifacts.is_architecture_reviewed else "Not reviewed",
-        })
+        checks.append(
+            {
+                "id": "architecture_reviewed",
+                "label": "Architecture reviewed",
+                "passed": self.artifacts.is_architecture_reviewed,
+                "detail": (
+                    "Reviewed" if self.artifacts.is_architecture_reviewed else "Not reviewed"
+                ),
+            }
+        )
 
-        checks.append({
-            "id": "devplan_confirmed",
-            "label": "Dev plan confirmed",
-            "passed": self.artifacts.is_devplan_confirmed,
-            "detail": "Confirmed" if self.artifacts.is_devplan_confirmed else "Not confirmed",
-        })
+        checks.append(
+            {
+                "id": "devplan_confirmed",
+                "label": "Dev plan confirmed",
+                "passed": self.artifacts.is_devplan_confirmed,
+                "detail": ("Confirmed" if self.artifacts.is_devplan_confirmed else "Not confirmed"),
+            }
+        )
 
         tasks_total = len(state.tasks)
         tasks_tests_confirmed = sum(
-            1 for ts in state.tasks
-            if ts.phases.get(Phase.TESTS) == Status.COMPLETE
+            1 for ts in state.tasks if ts.phases.get(Phase.TESTS) == Status.COMPLETE
         )
         all_confirmed = tasks_total > 0 and tasks_tests_confirmed == tasks_total
-        checks.append({
-            "id": "all_tasks_tests_confirmed",
-            "label": "All task tests confirmed",
-            "passed": all_confirmed,
-            "detail": f"{tasks_tests_confirmed}/{tasks_total} tasks",
-        })
+        checks.append(
+            {
+                "id": "all_tasks_tests_confirmed",
+                "label": "All task tests confirmed",
+                "passed": all_confirmed,
+                "detail": f"{tasks_tests_confirmed}/{tasks_total} tasks",
+            }
+        )
 
         tasks_impl_done = sum(
-            1 for ts in state.tasks
-            if ts.phases.get(Phase.IMPLEMENT) == Status.COMPLETE
+            1 for ts in state.tasks if ts.phases.get(Phase.IMPLEMENT) == Status.COMPLETE
         )
         all_impl = tasks_total > 0 and tasks_impl_done == tasks_total
-        checks.append({
-            "id": "all_tasks_implemented",
-            "label": "All tasks fully implemented",
-            "passed": all_impl,
-            "detail": f"{tasks_impl_done}/{tasks_total} tasks",
-        })
+        checks.append(
+            {
+                "id": "all_tasks_implemented",
+                "label": "All tasks fully implemented",
+                "passed": all_impl,
+                "detail": f"{tasks_impl_done}/{tasks_total} tasks",
+            }
+        )
 
         milestones = self.artifacts.list_milestones()
         milestone_tasks: dict[str, int] = {}
         for ts in state.tasks:
             milestone_tasks[ts.milestone] = milestone_tasks.get(ts.milestone, 0) + 1
         empty_milestones = [m for m in milestones if milestone_tasks.get(m, 0) == 0]
-        checks.append({
-            "id": "milestones_have_tasks",
-            "label": "All milestones have tasks",
-            "passed": len(empty_milestones) == 0 and len(milestones) > 0,
-            "detail": (
-                f"{len(milestones)} milestone(s), all with tasks"
-                if not empty_milestones
-                else f"Empty: {', '.join(empty_milestones[:5])}"
-            ),
-        })
+        checks.append(
+            {
+                "id": "milestones_have_tasks",
+                "label": "All milestones have tasks",
+                "passed": len(empty_milestones) == 0 and len(milestones) > 0,
+                "detail": (
+                    f"{len(milestones)} milestone(s), all with tasks"
+                    if not empty_milestones
+                    else f"Empty: {', '.join(empty_milestones[:5])}"
+                ),
+            }
+        )
 
         return checks

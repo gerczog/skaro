@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import openai
 
 from skaro_core.config import LLMConfig
-from skaro_core.llm.base import BaseLLMAdapter, LLMError, LLMMessage, LLMResponse, openai_wrap_error
+from skaro_core.llm.base import (
+    BaseLLMAdapter,
+    LLMError,
+    LLMMessage,
+    LLMResponse,
+    openai_wrap_error,
+)
 
 
 class OpenAIAdapter(BaseLLMAdapter):

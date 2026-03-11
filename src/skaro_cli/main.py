@@ -9,7 +9,6 @@ through the web dashboard (``skaro ui``).  The CLI provides only:
 
 from __future__ import annotations
 
-import sys
 import webbrowser
 from pathlib import Path
 
@@ -22,7 +21,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from skaro_core.artifacts import ArtifactManager, Phase, Status
+from skaro_core.artifacts import ArtifactManager, Phase
 from skaro_core.config import SkaroConfig, load_config, save_config, save_secret
 from skaro_core.i18n import set_locale, t
 from skaro_core.providers import get_model_choices, get_provider, get_provider_keys
@@ -48,9 +47,7 @@ def _print_banner() -> None:
         version = "dev"
 
     logo_text = Text(LOGO, style="bold cyan")
-    tagline = Text(
-        "  AI-powered SDLC orchestration platform", style="dim white"
-    )
+    tagline = Text("  AI-powered SDLC orchestration platform", style="dim white")
     ver = Text(f"  v{version}\n", style="dim")
 
     banner = Text()
@@ -116,13 +113,9 @@ def _print_init_banner() -> None:
         version = "dev"
 
     logo_text = Text(LOGO, style="bold cyan")
-    tagline = Text(
-        "  AI-powered SDLC orchestration platform", style="dim white"
-    )
+    tagline = Text("  AI-powered SDLC orchestration platform", style="dim white")
     ver = Text(f"  v{version}", style="dim")
-    repo = Text(
-        "  https://github.com/skarodev/skaro", style="dim cyan"
-    )
+    repo = Text("  https://github.com/skarodev/skaro", style="dim cyan")
 
     banner = Text()
     banner.append_text(logo_text)
@@ -291,8 +284,7 @@ def _setup_llm_interactive(cfg: SkaroConfig) -> SkaroConfig:
     save_config(cfg)
 
     console.print(
-        f"\n  [green]✓[/green] "
-        f"{t('cli.init.llm_configured', provider=provider, model=model)}"
+        f"\n  [green]✓[/green] {t('cli.init.llm_configured', provider=provider, model=model)}"
     )
     return cfg
 
@@ -486,14 +478,14 @@ def _get_git_head(cwd: Path) -> str:
 
 async def _run_import_analyze(
     am: ArtifactManager,
-    cfg: "SkaroConfig",
+    cfg: SkaroConfig,
     name: str,
     cwd: Path,
     no_git: bool,
 ) -> None:
     """Run the full automatic import flow (option B)."""
-    from skaro_core.phases.repo_scan import RepoScanner, estimate_tokens
     from skaro_core.phases.import_analyze import ImportAnalyzePhase
+    from skaro_core.phases.repo_scan import RepoScanner
 
     # ── Scan & estimate ──────────────────────────────────────────────────────
     console.print(f"\n  {t('cli.init.scanning')}  ", end="")
@@ -507,13 +499,14 @@ async def _run_import_analyze(
 
     scan = await _asyncio.to_thread(scanner.scan)
 
-    console.print(f"[green]✓[/green]")
+    console.print("[green]✓[/green]")
     console.print(
         f"  {t('cli.init.scan_summary', files=len(scan.files), tokens=scan.estimated_tokens)}"
     )
 
     if scan.sampled:
-        console.print(f"  [yellow]⚡[/yellow] {t('cli.init.smart_sampling_applied', skipped=len(scan.skipped_paths))}")
+        msg = t("cli.init.smart_sampling_applied", skipped=len(scan.skipped_paths))
+        console.print(f"  [yellow]⚡[/yellow] {msg}")
 
     # ── Show .skaroignore exclusions ─────────────────────────────────────────
     skaroignored = scanner.skaroignored_files()
@@ -574,9 +567,6 @@ async def _run_import_analyze(
         raise SystemExit(1)
 
     # ── Success summary ──────────────────────────────────────────────────────
-    data = result.data
-    scan_info = data.get("scan", {})
-
     console.print(f"\n[green]✓[/green]  {t('cli.init.import_success')}")
     console.print()
     console.print(f"  {t('cli.init.created_artifacts')}")
@@ -591,7 +581,7 @@ async def _run_import_analyze(
     console.print(f"    1. {t('cli.init.review_constitution')}")
     console.print(f"    2. {t('cli.init.review_architecture')}")
     console.print(f"    3. {t('cli.init.review_devplan')}")
-    console.print(f"    4. [cyan]skaro ui[/cyan]")
+    console.print("    4. [cyan]skaro ui[/cyan]")
 
 
 def _print_init_success_new(skaro_path: Path, no_git: bool, am: ArtifactManager) -> None:
@@ -611,7 +601,9 @@ def _print_init_success_new(skaro_path: Path, no_git: bool, am: ArtifactManager)
     console.print()
     console.print("  [bold]Next steps:[/bold]")
     console.print("    1. Fill in constitution:  [cyan]nano .skaro/constitution.md[/cyan]")
-    console.print("    2. Fill in architecture:  [cyan]nano .skaro/architecture/architecture.md[/cyan]")
+    console.print(
+        "    2. Fill in architecture:  [cyan]nano .skaro/architecture/architecture.md[/cyan]"
+    )
     console.print("    3. Configure LLM:         [cyan]skaro config --provider groq[/cyan]")
     console.print("    4. Launch dashboard:       [cyan]skaro ui[/cyan]")
 
@@ -624,7 +616,9 @@ def _print_init_success_manual(skaro_path: Path) -> None:
     console.print("  [bold]Next steps:[/bold]")
     console.print("    1. Configure LLM:         [cyan]skaro config --provider groq[/cyan]")
     console.print("    2. Fill in constitution:  [cyan]nano .skaro/constitution.md[/cyan]")
-    console.print("    3. Fill in architecture:  [cyan]nano .skaro/architecture/architecture.md[/cyan]")
+    console.print(
+        "    3. Fill in architecture:  [cyan]nano .skaro/architecture/architecture.md[/cyan]"
+    )
     console.print("    4. Launch dashboard:       [cyan]skaro ui[/cyan]")
     console.print("    5. Generate dev plan:      [cyan]Dashboard → Dev Plan[/cyan]")
 
@@ -725,6 +719,7 @@ def ui(port: int | None, no_browser: bool) -> None:
 
     try:
         import uvicorn
+
         from skaro_web.app import create_app
 
         app = create_app(project_root=am.root)
@@ -834,9 +829,7 @@ def validate(task_name: str) -> None:
         raise SystemExit(1)
 
 
-def _get_dod_checks(
-    am: ArtifactManager, task_slug: str, phase: Phase
-) -> dict[str, bool]:
+def _get_dod_checks(am: ArtifactManager, task_slug: str, phase: Phase) -> dict[str, bool]:
     """Get DoD checks for a given phase."""
     fdir = am.find_task_dir(task_slug)
 
@@ -858,8 +851,7 @@ def _get_dod_checks(
             "plan.md exists": (fdir / "plan.md").exists(),
             "tasks.md exists": (fdir / "tasks.md").exists(),
             "Plan has stages": bool(
-                plan_content
-                and ("stage" in plan_content.lower() or "этап" in plan_content.lower())
+                plan_content and ("stage" in plan_content.lower() or "этап" in plan_content.lower())
             ),
         }
 
@@ -868,8 +860,7 @@ def _get_dod_checks(
         return {
             "At least one stage completed": len(completed) > 0,
             "AI_NOTES.md for each stage": all(
-                (am.find_stage_dir(task_slug, s) / "AI_NOTES.md").exists()
-                for s in completed
+                (am.find_stage_dir(task_slug, s) / "AI_NOTES.md").exists() for s in completed
             ),
         }
 

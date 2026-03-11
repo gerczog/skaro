@@ -57,9 +57,7 @@ class TasksMixin:
         if not mdir.is_dir():
             return []
         all_tasks = sorted(
-            d.name
-            for d in mdir.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
+            d.name for d in mdir.iterdir() if d.is_dir() and not d.name.startswith(".")
         )
         order = self.get_task_order(milestone)
         if not order:
@@ -94,9 +92,7 @@ class TasksMixin:
         """Save task order to order.json in milestone dir."""
         order_path = self.milestone_dir(milestone) / "order.json"
         order_path.parent.mkdir(parents=True, exist_ok=True)
-        order_path.write_text(
-            json.dumps(names, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        order_path.write_text(json.dumps(names, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _remove_from_order(self, milestone: str, task: str) -> None:
         """Remove a task from order.json if present."""
@@ -121,9 +117,7 @@ class TasksMixin:
             return path.read_text(encoding="utf-8")
         return ""
 
-    def write_task_file(
-        self, milestone: str, task: str, filename: str, content: str
-    ) -> Path:
+    def write_task_file(self, milestone: str, task: str, filename: str, content: str) -> Path:
         path = self.task_dir(milestone, task) / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
@@ -134,9 +128,7 @@ class TasksMixin:
     def stage_dir(self, milestone: str, task: str, stage: int) -> Path:
         return self.task_dir(milestone, task) / "stages" / f"stage-{stage:02d}"
 
-    def create_stage_notes(
-        self, milestone: str, task: str, stage: int, content: str
-    ) -> Path:
+    def create_stage_notes(self, milestone: str, task: str, stage: int, content: str) -> Path:
         sdir = self.stage_dir(milestone, task, stage)
         sdir.mkdir(parents=True, exist_ok=True)
         path = sdir / "AI_NOTES.md"
@@ -225,9 +217,7 @@ class TasksMixin:
         )
 
     def get_project_state(self) -> ProjectState:
-        all_tasks = [
-            self.get_task_state(ms, task) for ms, task in self.list_all_tasks()
-        ]
+        all_tasks = [self.get_task_state(ms, task) for ms, task in self.list_all_tasks()]
         return ProjectState(
             root=self.root,
             has_constitution=self.has_constitution,
@@ -268,9 +258,7 @@ class TasksMixin:
             return self.read_task_file(*resolved, filename)
         return ""
 
-    def find_and_write_task_file(
-        self, task_slug: str, filename: str, content: str
-    ) -> Path:
+    def find_and_write_task_file(self, task_slug: str, filename: str, content: str) -> Path:
         resolved = self.resolve_task_safe(task_slug)
         if resolved:
             return self.write_task_file(*resolved, filename, content)
@@ -284,9 +272,7 @@ class TasksMixin:
         resolved = self.resolve_task_safe(task_slug)
         if resolved:
             return self.get_task_state(*resolved)
-        return TaskState(
-            name=task_slug, milestone="", phases={}, current_stage=0, total_stages=0
-        )
+        return TaskState(name=task_slug, milestone="", phases={}, current_stage=0, total_stages=0)
 
     def find_completed_stages(self, task_slug: str) -> list[int]:
         resolved = self.resolve_task_safe(task_slug)
@@ -298,17 +284,9 @@ class TasksMixin:
         resolved = self.resolve_task_safe(task_slug)
         if resolved:
             return self.stage_dir(*resolved, stage)
-        return (
-            self.milestones_dir
-            / "_unassigned"
-            / task_slug
-            / "stages"
-            / f"stage-{stage:02d}"
-        )
+        return self.milestones_dir / "_unassigned" / task_slug / "stages" / f"stage-{stage:02d}"
 
-    def find_and_create_stage_notes(
-        self, task_slug: str, stage: int, content: str
-    ) -> Path:
+    def find_and_create_stage_notes(self, task_slug: str, stage: int, content: str) -> Path:
         resolved = self.resolve_task_safe(task_slug)
         if resolved:
             return self.create_stage_notes(*resolved, stage, content)

@@ -21,9 +21,9 @@ UI checks whether answers are filled to determine state.
 from __future__ import annotations
 
 import re
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
-from skaro_core.llm.base import LLMMessage
 from skaro_core.phases.base import BasePhase, PhaseResult
 
 CLARIFY_FILENAME = "clarifications.md"
@@ -129,9 +129,7 @@ class ClarifyPhase(BasePhase):
         response_content = await self._stream_collect(messages, task=task or "")
 
         # Save clarifications (with questions AND answers)
-        clarify_path = self.artifacts.find_and_write_task_file(
-            task, CLARIFY_FILENAME, qa_content
-        )
+        clarify_path = self.artifacts.find_and_write_task_file(task, CLARIFY_FILENAME, qa_content)
 
         # Save updated spec
         updated_spec = response_content
@@ -199,9 +197,7 @@ class ClarifyPhase(BasePhase):
         self.artifacts.find_and_write_task_file(task, CLARIFY_FILENAME, content)
         return PhaseResult(success=True, message="Draft saved.")
 
-    async def stream_run(
-        self, task: str | None = None, **kwargs: Any
-    ) -> AsyncIterator[str]:
+    async def stream_run(self, task: str | None = None, **kwargs: Any) -> AsyncIterator[str]:
         """Stream clarification questions."""
         if not task:
             yield "Error: task name is required."
@@ -224,6 +220,7 @@ class ClarifyPhase(BasePhase):
 
 
 # ── File format helpers ─────────────────────────────
+
 
 def _resolve_answer(answer: str, options: list[str]) -> str:
     """If answer is an option letter/number, resolve to full option text."""
@@ -309,9 +306,7 @@ def parse_clarifications(content: str) -> list[dict]:
         block = parts[i + 1]
 
         # Extract answer
-        answer_split = re.split(
-            r"^\*\*Answer:\*\*\s*$", block, maxsplit=1, flags=re.MULTILINE
-        )
+        answer_split = re.split(r"^\*\*Answer:\*\*\s*$", block, maxsplit=1, flags=re.MULTILINE)
         before_answer = answer_split[0]
         answer_text = answer_split[1].strip() if len(answer_split) > 1 else ""
 
@@ -323,7 +318,9 @@ def parse_clarifications(content: str) -> list[dict]:
 
         # Extract options
         options: list[str] = []
-        opts_match = re.split(r"^\*\*Options:\*\*\s*$", before_answer, maxsplit=1, flags=re.MULTILINE)
+        opts_match = re.split(
+            r"^\*\*Options:\*\*\s*$", before_answer, maxsplit=1, flags=re.MULTILINE
+        )
         if len(opts_match) > 1:
             opt_block = opts_match[1]
             for m in re.finditer(r"^- [A-Z]\)\s*(.+)$", opt_block, re.MULTILINE):
@@ -337,13 +334,15 @@ def parse_clarifications(content: str) -> list[dict]:
         question_text = re.sub(r"^\*\*Options:\*\*[\s\S]*$", "", question_text, flags=re.MULTILINE)
         question_text = question_text.strip()
 
-        blocks.append({
-            "num": num,
-            "question": question_text,
-            "context": context,
-            "options": options,
-            "answer": answer_text,
-        })
+        blocks.append(
+            {
+                "num": num,
+                "question": question_text,
+                "context": context,
+                "options": options,
+                "answer": answer_text,
+            }
+        )
         i += 2
 
     return blocks

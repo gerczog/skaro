@@ -43,11 +43,17 @@ class FixPhase(ConversationalFixBase):
             return PhaseResult(success=False, message="Message is required.")
 
         extra_context = await asyncio.to_thread(
-            self._build_task_context, task, max_files=30, max_file_size=15_000,
+            self._build_task_context,
+            task,
+            max_files=30,
+            max_file_size=15_000,
         )
 
         response, proposed, file_diffs, updated_conv = await self._run_fix(
-            user_message, conversation, extra_context, task=task,
+            user_message,
+            conversation,
+            extra_context,
+            task=task,
         )
 
         # Persist

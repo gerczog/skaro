@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from skaro_core.artifacts import ArtifactManager, TEMPLATES_PKG_DIR
-from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase
+from skaro_core.artifacts import TEMPLATES_PKG_DIR, ArtifactManager
+from skaro_web.api.deps import (
+    broadcast,
+    get_am,
+    get_project_root,
+    get_ws_manager,
+    llm_phase,
+)
 from skaro_web.api.schemas import ContentBody, GenerateFromIdeaBody
 
 router = APIRouter(prefix="/api/constitution", tags=["constitution"])
@@ -15,19 +21,44 @@ _PRESETS_DIR = TEMPLATES_PKG_DIR / "constitution-presets" if TEMPLATES_PKG_DIR e
 
 # Registry: id → (label, category, filename)
 _PRESET_REGISTRY: list[dict[str, str]] = [
-    {"id": "react",        "name": "React",        "category": "frontend", "file": "react.md"},
-    {"id": "vue",          "name": "Vue.js",       "category": "frontend", "file": "vue.md"},
-    {"id": "sveltekit",    "name": "SvelteKit",    "category": "frontend", "file": "sveltekit.md"},
-    {"id": "nextjs",       "name": "Next.js",      "category": "frontend", "file": "nextjs.md"},
-    {"id": "angular",      "name": "Angular",      "category": "frontend", "file": "angular.md"},
-    {"id": "fastapi",      "name": "FastAPI",       "category": "backend",  "file": "fastapi.md"},
-    {"id": "django",       "name": "Django",        "category": "backend",  "file": "django.md"},
-    {"id": "python-cli",   "name": "Python CLI",   "category": "cli",      "file": "python-cli.md"},
-    {"id": "express",      "name": "Express.js",    "category": "backend",  "file": "express.md"},
-    {"id": "nestjs",       "name": "NestJS",        "category": "backend",  "file": "nestjs.md"},
-    {"id": "react-native", "name": "React Native",  "category": "mobile",   "file": "react-native.md"},
-    {"id": "flutter",      "name": "Flutter",       "category": "mobile",   "file": "flutter.md"},
-    {"id": "kotlin-mp",    "name": "Kotlin MP",     "category": "mobile",   "file": "kotlin-mp.md"},
+    {"id": "react", "name": "React", "category": "frontend", "file": "react.md"},
+    {"id": "vue", "name": "Vue.js", "category": "frontend", "file": "vue.md"},
+    {
+        "id": "sveltekit",
+        "name": "SvelteKit",
+        "category": "frontend",
+        "file": "sveltekit.md",
+    },
+    {"id": "nextjs", "name": "Next.js", "category": "frontend", "file": "nextjs.md"},
+    {"id": "angular", "name": "Angular", "category": "frontend", "file": "angular.md"},
+    {"id": "fastapi", "name": "FastAPI", "category": "backend", "file": "fastapi.md"},
+    {"id": "django", "name": "Django", "category": "backend", "file": "django.md"},
+    {
+        "id": "python-cli",
+        "name": "Python CLI",
+        "category": "cli",
+        "file": "python-cli.md",
+    },
+    {
+        "id": "express",
+        "name": "Express.js",
+        "category": "backend",
+        "file": "express.md",
+    },
+    {"id": "nestjs", "name": "NestJS", "category": "backend", "file": "nestjs.md"},
+    {
+        "id": "react-native",
+        "name": "React Native",
+        "category": "mobile",
+        "file": "react-native.md",
+    },
+    {"id": "flutter", "name": "Flutter", "category": "mobile", "file": "flutter.md"},
+    {
+        "id": "kotlin-mp",
+        "name": "Kotlin MP",
+        "category": "mobile",
+        "file": "kotlin-mp.md",
+    },
 ]
 
 
@@ -103,7 +134,11 @@ async def generate_constitution_from_idea(
         )
     if not content or not content.strip():
         content = existing or default_example
-        return {"success": bool(content), "message": "No new content; returning existing or example.", "content": content or ""}
+        return {
+            "success": bool(content),
+            "message": "No new content; returning existing or example.",
+            "content": content or "",
+        }
     return {"success": True, "content": content}
 
 

@@ -17,9 +17,9 @@ from fastapi.responses import JSONResponse
 
 from skaro_web.api.deps import broadcast, get_project_root
 from skaro_web.api.schemas import (
+    GitCheckoutBody,
     GitCommitBody,
     GitStageBody,
-    GitCheckoutBody,
 )
 
 logger = logging.getLogger("skaro_web")
@@ -30,6 +30,7 @@ router = APIRouter(prefix="/api/git", tags=["git"])
 # ═══════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════
+
 
 def _get_repo(project_root: Path):
     """Open the git repo at *project_root*. Raises if not a repo."""
@@ -47,19 +48,23 @@ def _file_status_list(repo) -> list[dict[str, str]]:
 
     # Staged (index vs HEAD)
     for diff in repo.index.diff("HEAD"):
-        files.append({
-            "path": diff.a_path or diff.b_path,
-            "status": "staged",
-            "change": diff.change_type,  # A, M, D, R, …
-        })
+        files.append(
+            {
+                "path": diff.a_path or diff.b_path,
+                "status": "staged",
+                "change": diff.change_type,  # A, M, D, R, …
+            }
+        )
 
     # Unstaged (working tree vs index)
     for diff in repo.index.diff(None):
-        files.append({
-            "path": diff.a_path or diff.b_path,
-            "status": "modified",
-            "change": diff.change_type,
-        })
+        files.append(
+            {
+                "path": diff.a_path or diff.b_path,
+                "status": "modified",
+                "change": diff.change_type,
+            }
+        )
 
     # Untracked
     for path in repo.untracked_files:
@@ -87,7 +92,7 @@ def _diff_for_file(repo, filepath: str) -> str:
             try:
                 content = full_path.read_text(encoding="utf-8", errors="replace")
                 lines = content.splitlines()
-                diff_lines = [f"--- /dev/null", f"+++ b/{filepath}"]
+                diff_lines = ["--- /dev/null", f"+++ b/{filepath}"]
                 diff_lines.append(f"@@ -0,0 +1,{len(lines)} @@")
                 for line in lines:
                     diff_lines.append(f"+{line}")
@@ -119,9 +124,7 @@ def _stage_files(repo, project_root: Path, files: list[str]) -> tuple[int, list[
 
     # Build the set of paths currently tracked in the index.
     indexed: set[str] = (
-        {entry.path for entry in repo.index.entries.values()}
-        if repo.head.is_valid()
-        else set()
+        {entry.path for entry in repo.index.entries.values()} if repo.head.is_valid() else set()
     )
 
     for f in files:
@@ -132,9 +135,7 @@ def _stage_files(repo, project_root: Path, files: list[str]) -> tuple[int, list[
             # File was manually deleted — stage the deletion.
             to_remove.append(f)
         else:
-            logger.warning(
-                "git stage: skipping '%s' — not on disk and not tracked in index", f
-            )
+            logger.warning("git stage: skipping '%s' — not on disk and not tracked in index", f)
             skipped.append(f)
 
     if to_add:
@@ -149,6 +150,7 @@ def _stage_files(repo, project_root: Path, files: list[str]) -> tuple[int, list[
 # ═══════════════════════════════════════════════════
 # Endpoints
 # ═══════════════════════════════════════════════════
+
 
 @router.get("/status")
 async def git_status(project_root: Path = Depends(get_project_root)):
@@ -193,7 +195,10 @@ async def git_diff(
     """Return unified diff for a single file."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     diff = await asyncio.to_thread(_diff_for_file, repo, file)
     return {"file": file, "diff": diff}
@@ -212,12 +217,13 @@ async def git_stage(
     """
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     try:
-        staged, skipped = await asyncio.to_thread(
-            _stage_files, repo, project_root, payload.files
-        )
+        staged, skipped = await asyncio.to_thread(_stage_files, repo, project_root, payload.files)
         await broadcast(request, {"event": "git:staged", "files": payload.files})
         msg = f"Staged {staged} file(s)"
         if skipped:
@@ -237,7 +243,10 @@ async def git_unstage(
     """Unstage (git reset HEAD) selected files."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     try:
         await asyncio.to_thread(repo.index.reset, paths=payload.files)
@@ -257,7 +266,10 @@ async def git_commit(
     """Commit staged changes with a message. Optionally push afterwards."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     # Verify there are staged changes
     staged = list(repo.index.diff("HEAD"))
@@ -289,11 +301,14 @@ async def git_commit(
                 except Exception as push_exc:
                     result["push_error"] = str(push_exc)
 
-        await broadcast(request, {
-            "event": "git:committed",
-            "sha": commit.hexsha[:8],
-            "pushed": result["pushed"],
-        })
+        await broadcast(
+            request,
+            {
+                "event": "git:committed",
+                "sha": commit.hexsha[:8],
+                "pushed": result["pushed"],
+            },
+        )
         return result
 
     except Exception as exc:
@@ -309,10 +324,16 @@ async def git_push(
     """Push current branch to remote."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     if not repo.remotes:
-        return JSONResponse(status_code=400, content={"success": False, "message": "No remote configured"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "No remote configured"},
+        )
 
     try:
         remote = repo.remotes[0]
@@ -330,7 +351,10 @@ async def git_branches(project_root: Path = Depends(get_project_root)):
     """List local branches and current branch."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     try:
         current = repo.active_branch.name
@@ -350,7 +374,10 @@ async def git_checkout(
     """Switch to an existing branch or create a new one."""
     repo = await asyncio.to_thread(_get_repo, project_root)
     if repo is None:
-        return JSONResponse(status_code=400, content={"success": False, "message": "Not a git repository"})
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "Not a git repository"},
+        )
 
     try:
         if payload.create:
@@ -371,6 +398,7 @@ async def git_checkout(
 # Auto-stage helper (called from tasks.py after apply)
 # ═══════════════════════════════════════════════════
 
+
 async def auto_stage_file(project_root: Path, filepath: str) -> bool:
     """Stage a single file after it was applied. Returns True on success.
 
@@ -381,12 +409,11 @@ async def auto_stage_file(project_root: Path, filepath: str) -> bool:
     if repo is None:
         return False
     try:
-        staged, skipped = await asyncio.to_thread(
-            _stage_files, repo, project_root, [filepath]
-        )
+        staged, skipped = await asyncio.to_thread(_stage_files, repo, project_root, [filepath])
         if skipped:
             logger.warning(
-                "Auto-stage skipped '%s': not on disk and not tracked in index", filepath
+                "Auto-stage skipped '%s': not on disk and not tracked in index",
+                filepath,
             )
             return False
         logger.info("Auto-staged: %s", filepath)

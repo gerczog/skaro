@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from skaro_core.phases.base import BasePhase, PhaseResult
 
@@ -47,10 +48,8 @@ class ImplementPhase(BasePhase):
         # Build prompt with stage number injected
         prompt_template = self._load_prompt_template("implement")
         if prompt_template:
-            prompt = (
-                prompt_template
-                .replace("{stage}", str(stage))
-                .replace("{stage_section}", stage_section)
+            prompt = prompt_template.replace("{stage}", str(stage)).replace(
+                "{stage_section}", stage_section
             )
         else:
             prompt = (
@@ -88,7 +87,9 @@ class ImplementPhase(BasePhase):
 
         # Existing source files — LLM needs to see what's already written
         if not source_files:
-            source_files = await self._collect_project_sources_async(max_files=20, max_file_size=10_000)
+            source_files = await self._collect_project_sources_async(
+                max_files=20, max_file_size=10_000
+            )
 
         if source_files:
             # Bundle existing files so LLM can import from them
@@ -130,7 +131,11 @@ class ImplementPhase(BasePhase):
                     old_content = target.read_text(encoding="utf-8")
                 except (UnicodeDecodeError, PermissionError):
                     old_content = None
-                file_diffs[fpath] = {"old": old_content, "new": content, "is_new": False}
+                file_diffs[fpath] = {
+                    "old": old_content,
+                    "new": content,
+                    "is_new": False,
+                }
             else:
                 file_diffs[fpath] = {"old": None, "new": content, "is_new": True}
 
@@ -145,9 +150,7 @@ class ImplementPhase(BasePhase):
             },
         )
 
-    async def stream_run(
-        self, task: str | None = None, **kwargs: Any
-    ) -> AsyncIterator[str]:
+    async def stream_run(self, task: str | None = None, **kwargs: Any) -> AsyncIterator[str]:
         """Stream implementation output."""
         if not task:
             yield "Error: task name is required."
@@ -188,12 +191,8 @@ class ImplementPhase(BasePhase):
         end = None
 
         # Pattern matches: ## Stage 1, ## Stage 1:, ##Stage 1, etc.
-        stage_pattern = re.compile(
-            rf"^##\s*(?:Stage|Этап)\s*{stage}\b", re.IGNORECASE
-        )
-        next_stage_pattern = re.compile(
-            r"^##\s*(?:Stage|Этап)\s*\d+", re.IGNORECASE
-        )
+        stage_pattern = re.compile(rf"^##\s*(?:Stage|Этап)\s*{stage}\b", re.IGNORECASE)
+        next_stage_pattern = re.compile(r"^##\s*(?:Stage|Этап)\s*\d+", re.IGNORECASE)
 
         for i, line in enumerate(lines):
             if stage_pattern.match(line.strip()):

@@ -20,39 +20,41 @@ def build_devplan_markdown(milestones: list[dict[str, Any]]) -> str:
         ms_title = ms_data.get("milestone_title", ms_slug)
         tasks = ms_data.get("tasks", [])
 
-        lines.extend([
-            f"## {ms_title}",
-            f"_Directory: `milestones/{ms_slug}/`_",
-            "",
-            "| # | Task | Status | Dependencies | Description |",
-            "|---|------|--------|--------------|-------------|",
-        ])
+        lines.extend(
+            [
+                f"## {ms_title}",
+                f"_Directory: `milestones/{ms_slug}/`_",
+                "",
+                "| # | Task | Status | Dependencies | Description |",
+                "|---|------|--------|--------------|-------------|",
+            ]
+        )
 
         for i, t in enumerate(tasks, 1):
             name = t.get("name", f"task-{i}")
             desc = t.get("description", "")
-            deps = (
-                ", ".join(t.get("dependencies", [])) if t.get("dependencies") else "—"
-            )
+            deps = ", ".join(t.get("dependencies", [])) if t.get("dependencies") else "—"
             lines.append(f"| {i} | {name} | planned | {deps} | {desc} |")
 
         lines.append("")
 
-    lines.extend([
-        "---",
-        "",
-        "## Status Legend",
-        "- **idea** — not yet scoped",
-        "- **planned** — scoped, assigned to milestone",
-        "- **in-progress** — actively being developed",
-        "- **done** — completed and reviewed",
-        "- **cut** — removed from scope (with reason)",
-        "",
-        "## Change Log",
-        f"- {date.today().isoformat()}: Initial plan created with "
-        f"{sum(len(m.get('tasks', [])) for m in milestones)} tasks "
-        f"across {len(milestones)} milestones",
-    ])
+    lines.extend(
+        [
+            "---",
+            "",
+            "## Status Legend",
+            "- **idea** — not yet scoped",
+            "- **planned** — scoped, assigned to milestone",
+            "- **in-progress** — actively being developed",
+            "- **done** — completed and reviewed",
+            "- **cut** — removed from scope (with reason)",
+            "",
+            "## Change Log",
+            f"- {date.today().isoformat()}: Initial plan created with "
+            f"{sum(len(m.get('tasks', [])) for m in milestones)} tasks "
+            f"across {len(milestones)} milestones",
+        ]
+    )
 
     return "\n".join(lines)
 

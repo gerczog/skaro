@@ -23,7 +23,6 @@ from typing import Any
 
 from skaro_core.phases._devplan_parser import parse_milestones
 
-
 _SECTION_NAMES = (
     "Constitution",
     "Architecture",
@@ -51,10 +50,7 @@ class ImportAnalysisResult:
     @property
     def is_complete(self) -> bool:
         """True if the four primary artifacts were extracted."""
-        return bool(
-            self.constitution.strip()
-            and self.architecture.strip()
-        )
+        return bool(self.constitution.strip() and self.architecture.strip())
 
 
 def parse_import_response(content: str) -> ImportAnalysisResult:

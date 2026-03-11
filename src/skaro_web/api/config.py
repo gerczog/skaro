@@ -28,6 +28,7 @@ router = APIRouter(prefix="/api/config", tags=["config"])
 
 # ── Helpers ──────────────────────────────────────────────
 
+
 def _env_name_for_provider(provider: str) -> str:
     """Determine the canonical env-var name for a provider."""
     preset = PROVIDER_PRESETS.get(provider)
@@ -59,6 +60,7 @@ def _config_to_frontend(config: SkaroConfig) -> dict:
 
 
 # ── Endpoints ────────────────────────────────────────────
+
 
 @router.get("")
 async def get_config(project_root: Path = Depends(get_project_root)):

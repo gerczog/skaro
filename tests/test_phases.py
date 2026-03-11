@@ -7,21 +7,21 @@ Requires: pip install pytest-asyncio
 from __future__ import annotations
 
 import tempfile
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from skaro_core.artifacts import ArtifactManager
-from skaro_core.config import LLMConfig, SkaroConfig
+from skaro_core.config import LLMConfig
 from skaro_core.llm.base import BaseLLMAdapter, LLMMessage, LLMResponse
-from skaro_core.phases.base import BasePhase, PhaseResult, SKIP_DIRS, SOURCE_EXTENSIONS
-
+from skaro_core.phases.base import BasePhase
 
 # ═══════════════════════════════════════════════════
 # Mock LLM adapter
 # ═══════════════════════════════════════════════════
+
 
 class MockLLMAdapter(BaseLLMAdapter):
     """LLM adapter that returns pre-configured responses."""
@@ -52,6 +52,7 @@ class MockLLMAdapter(BaseLLMAdapter):
 # ═══════════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════════
+
 
 @pytest.fixture
 def project_dir():
@@ -95,11 +96,12 @@ def project_with_sources(init_project):
 # _scan_project_tree
 # ═══════════════════════════════════════════════════
 
-class TestScanProjectTree:
 
+class TestScanProjectTree:
     def _make_phase(self, root: Path) -> BasePhase:
         """Create a concrete phase instance for testing."""
         from skaro_core.phases.plan import PlanPhase
+
         return PlanPhase(project_root=root)
 
     def test_lists_source_files(self, project_with_sources):
@@ -148,10 +150,11 @@ class TestScanProjectTree:
 # _collect_project_sources
 # ═══════════════════════════════════════════════════
 
-class TestCollectProjectSources:
 
+class TestCollectProjectSources:
     def _make_phase(self, root: Path) -> BasePhase:
         from skaro_core.phases.plan import PlanPhase
+
         return PlanPhase(project_root=root)
 
     def test_collects_source_files(self, project_with_sources):
@@ -213,8 +216,8 @@ class TestCollectProjectSources:
 # PlanPhase with mock LLM
 # ═══════════════════════════════════════════════════
 
-class TestPlanPhaseWithMock:
 
+class TestPlanPhaseWithMock:
     @pytest.fixture
     def task_project(self, init_project):
         am = ArtifactManager(init_project)
@@ -236,6 +239,7 @@ class TestPlanPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.plan import PlanPhase
+
             phase = PlanPhase(project_root=task_project)
             result = await phase.run(task="auth")
 
@@ -252,17 +256,13 @@ class TestPlanPhaseWithMock:
     @pytest.mark.asyncio
     async def test_plan_phase_counts_stages(self, task_project):
         mock_response = (
-            "```markdown\n"
-            "# Plan\n\n"
-            "## Stage 1\nSetup\n\n"
-            "## Stage 2\nBuild\n\n"
-            "## Stage 3\nTest\n"
-            "```"
+            "```markdown\n# Plan\n\n## Stage 1\nSetup\n\n## Stage 2\nBuild\n\n## Stage 3\nTest\n```"
         )
         mock_adapter = MockLLMAdapter(mock_response)
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.plan import PlanPhase
+
             phase = PlanPhase(project_root=task_project)
             result = await phase.run(task="auth")
 
@@ -271,16 +271,13 @@ class TestPlanPhaseWithMock:
     @pytest.mark.asyncio
     async def test_plan_phase_handles_tasks_section(self, task_project):
         mock_response = (
-            "# Plan\n\n"
-            "## Stage 1\nSetup\n\n"
-            "---TASKS---\n"
-            "- [ ] Create models\n"
-            "- [ ] Add routes\n"
+            "# Plan\n\n## Stage 1\nSetup\n\n---TASKS---\n- [ ] Create models\n- [ ] Add routes\n"
         )
         mock_adapter = MockLLMAdapter(mock_response)
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.plan import PlanPhase
+
             phase = PlanPhase(project_root=task_project)
             result = await phase.run(task="auth")
 
@@ -292,31 +289,34 @@ class TestPlanPhaseWithMock:
 # ClarifyPhase with mock LLM
 # ═══════════════════════════════════════════════════
 
-class TestClarifyPhaseWithMock:
 
+class TestClarifyPhaseWithMock:
     @pytest.fixture
     def task_project(self, init_project):
         am = ArtifactManager(init_project)
         am.create_milestone("01-foundation")
         am.create_task("01-foundation", "auth")
         am.write_task_file(
-            "01-foundation", "auth", "spec.md",
-            "# Auth Module\n\nImplement user authentication with JWT.\n"
+            "01-foundation",
+            "auth",
+            "spec.md",
+            "# Auth Module\n\nImplement user authentication with JWT.\n",
         )
         return init_project
 
     @pytest.mark.asyncio
     async def test_generate_questions_json(self, task_project):
-        mock_response = '''```json
+        mock_response = """```json
 [
   {"question": "Which database?", "context": "For user storage", "options": ["PostgreSQL", "MySQL"]},
   {"question": "Need OAuth?", "context": "Social login", "options": ["Yes", "No"]}
 ]
-```'''
+```"""
         mock_adapter = MockLLMAdapter(mock_response)
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.clarify import ClarifyPhase
+
             phase = ClarifyPhase(project_root=task_project)
             response = await phase.generate_questions("auth")
 
@@ -331,6 +331,7 @@ class TestClarifyPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.clarify import ClarifyPhase
+
             phase = ClarifyPhase(project_root=task_project)
             result = await phase.run(task="auth")
 
@@ -342,20 +343,19 @@ class TestClarifyPhaseWithMock:
 # ImplementPhase with mock LLM
 # ═══════════════════════════════════════════════════
 
-class TestImplementPhaseWithMock:
 
+class TestImplementPhaseWithMock:
     @pytest.fixture
     def task_project(self, init_project):
         am = ArtifactManager(init_project)
         am.create_milestone("01-foundation")
         am.create_task("01-foundation", "auth")
+        am.write_task_file("01-foundation", "auth", "spec.md", "# Auth\nJWT auth module\n")
         am.write_task_file(
-            "01-foundation", "auth", "spec.md",
-            "# Auth\nJWT auth module\n"
-        )
-        am.write_task_file(
-            "01-foundation", "auth", "plan.md",
-            "# Plan\n\n## Stage 1: Setup\n- Create base files\n"
+            "01-foundation",
+            "auth",
+            "plan.md",
+            "# Plan\n\n## Stage 1: Setup\n- Create base files\n",
         )
         return init_project
 
@@ -380,6 +380,7 @@ class TestImplementPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.implement import ImplementPhase
+
             phase = ImplementPhase(project_root=task_project)
             result = await phase.run(task="auth", stage=1)
 
@@ -400,6 +401,7 @@ class TestImplementPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.implement import ImplementPhase
+
             phase = ImplementPhase(project_root=init_project)
             result = await phase.run(task="no-plan", stage=1)
 
@@ -411,8 +413,8 @@ class TestImplementPhaseWithMock:
 # _validate_project_path (already in test_validation, but test edge cases)
 # ═══════════════════════════════════════════════════
 
-class TestValidateProjectPathEdgeCases:
 
+class TestValidateProjectPathEdgeCases:
     def test_symlink_within_project(self, init_project):
         """Symlinks that resolve within project should be allowed."""
         real_file = init_project / "real.py"
@@ -421,9 +423,7 @@ class TestValidateProjectPathEdgeCases:
         assert result == real_file.resolve()
 
     def test_deeply_nested_valid_path(self, init_project):
-        result = BasePhase._validate_project_path(
-            init_project, "a/b/c/d/e/f.py"
-        )
+        result = BasePhase._validate_project_path(init_project, "a/b/c/d/e/f.py")
         assert init_project.resolve() in result.parents
 
 
@@ -431,20 +431,19 @@ class TestValidateProjectPathEdgeCases:
 # FixPhase with mock LLM
 # ═══════════════════════════════════════════════════
 
-class TestFixPhaseWithMock:
 
+class TestFixPhaseWithMock:
     @pytest.fixture
     def task_project(self, init_project):
         am = ArtifactManager(init_project)
         am.create_milestone("01-foundation")
         am.create_task("01-foundation", "auth")
+        am.write_task_file("01-foundation", "auth", "spec.md", "# Auth\nJWT auth module\n")
         am.write_task_file(
-            "01-foundation", "auth", "spec.md",
-            "# Auth\nJWT auth module\n"
-        )
-        am.write_task_file(
-            "01-foundation", "auth", "plan.md",
-            "# Plan\n\n## Stage 1: Setup\n- Create base files\n"
+            "01-foundation",
+            "auth",
+            "plan.md",
+            "# Plan\n\n## Stage 1: Setup\n- Create base files\n",
         )
         # Create a source file that LLM will "fix"
         src = init_project / "src" / "auth.py"
@@ -465,6 +464,7 @@ class TestFixPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.fix import FixPhase
+
             phase = FixPhase(project_root=task_project)
             result = await phase.run(
                 task="auth",
@@ -486,6 +486,7 @@ class TestFixPhaseWithMock:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.fix import FixPhase
+
             phase = FixPhase(project_root=task_project)
             result = await phase.run(
                 task="auth",
@@ -507,6 +508,7 @@ class TestFixPhaseWithMock:
     async def test_fix_rejects_empty_message(self, task_project):
         with patch("skaro_core.phases.base.create_llm_adapter"):
             from skaro_core.phases.fix import FixPhase
+
             phase = FixPhase(project_root=task_project)
             result = await phase.run(task="auth", message="", conversation=[])
 
@@ -515,6 +517,7 @@ class TestFixPhaseWithMock:
 
     def test_clear_conversation(self, task_project):
         from skaro_core.phases.fix import FixPhase
+
         phase = FixPhase(project_root=task_project)
 
         # Save a conversation
@@ -527,6 +530,7 @@ class TestFixPhaseWithMock:
 
     def test_apply_file(self, task_project):
         from skaro_core.phases.fix import FixPhase
+
         phase = FixPhase(project_root=task_project)
         result = phase.apply_file("auth", "src/auth.py", "def login():\n    return 'ok'\n")
         assert result.success is True
@@ -537,6 +541,7 @@ class TestFixPhaseWithMock:
 
     def test_apply_file_rejects_traversal(self, task_project):
         from skaro_core.phases.fix import FixPhase
+
         phase = FixPhase(project_root=task_project)
         result = phase.apply_file("auth", "../../../etc/passwd", "hacked")
         assert result.success is False
@@ -546,11 +551,12 @@ class TestFixPhaseWithMock:
 # _find_templates_dir
 # ═══════════════════════════════════════════════════
 
-class TestFindTemplatesDir:
 
+class TestFindTemplatesDir:
     def test_templates_dir_found(self):
         """In dev mode, templates dir should be found via relative path."""
         from skaro_core.artifacts import _find_templates_dir
+
         result = _find_templates_dir()
         # May be None in CI without templates, but in our project it exists
         if result is not None:
@@ -560,5 +566,6 @@ class TestFindTemplatesDir:
     def test_templates_pkg_dir_is_set(self):
         """Module-level TEMPLATES_PKG_DIR should be initialized."""
         from skaro_core.artifacts import TEMPLATES_PKG_DIR
+
         # Either a valid Path or None (never raises)
         assert TEMPLATES_PKG_DIR is None or TEMPLATES_PKG_DIR.is_dir()

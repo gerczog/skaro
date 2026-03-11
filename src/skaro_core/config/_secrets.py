@@ -29,9 +29,7 @@ def load_secrets(project_root: Path | None = None) -> dict[str, str]:
     return {}
 
 
-def save_secret(
-    key_name: str, key_value: str, project_root: Path | None = None
-) -> Path:
+def save_secret(key_name: str, key_value: str, project_root: Path | None = None) -> Path:
     """Store an API key in ``.skaro/secrets.yaml``.
 
     Creates the file if it doesn't exist. Merges with existing keys.

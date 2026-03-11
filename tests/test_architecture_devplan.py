@@ -6,8 +6,8 @@ LLM calls are mocked — tests verify data flow, artifact creation, and precondi
 from __future__ import annotations
 
 import tempfile
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +15,6 @@ import pytest
 from skaro_core.artifacts import ArtifactManager
 from skaro_core.config import LLMConfig
 from skaro_core.llm.base import BaseLLMAdapter, LLMMessage, LLMResponse
-
 
 # ═══════════════════════════════════════════════════
 # Mock
@@ -95,7 +94,6 @@ def project_with_arch(init_project):
 
 
 class TestArchitecturePhase:
-
     @pytest.mark.asyncio
     async def test_review_splits_response(self, init_project):
         mock_response = (
@@ -109,6 +107,7 @@ class TestArchitecturePhase:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.architecture import ArchitecturePhase
+
             phase = ArchitecturePhase(project_root=init_project)
             result = await phase.run(
                 architecture_draft="# Arch\nMonolithic app",
@@ -121,10 +120,13 @@ class TestArchitecturePhase:
 
     @pytest.mark.asyncio
     async def test_review_persists(self, init_project):
-        mock_adapter = MockLLMAdapter("## Review\nLooks good\n\n## Proposed Architecture\nNo changes")
+        mock_adapter = MockLLMAdapter(
+            "## Review\nLooks good\n\n## Proposed Architecture\nNo changes"
+        )
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.architecture import ArchitecturePhase
+
             phase = ArchitecturePhase(project_root=init_project)
             await phase.run(architecture_draft="# Arch\nDraft")
 
@@ -136,6 +138,7 @@ class TestArchitecturePhase:
     async def test_requires_draft(self, init_project):
         with patch("skaro_core.phases.base.create_llm_adapter"):
             from skaro_core.phases.architecture import ArchitecturePhase
+
             phase = ArchitecturePhase(project_root=init_project)
             result = await phase.run(architecture_draft="")
 
@@ -149,6 +152,7 @@ class TestArchitecturePhase:
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.architecture import ArchitecturePhase
+
             phase = ArchitecturePhase(project_root=init_project)
             result = await phase.run(architecture_draft="# Arch\nBad draft")
 
@@ -179,10 +183,9 @@ class TestArchitecturePhase:
 
 
 class TestDevPlanPhase:
-
     @pytest.mark.asyncio
     async def test_run_creates_devplan(self, project_with_arch):
-        mock_response = '''```json
+        mock_response = """```json
 [
   {
     "milestone_slug": "01-foundation",
@@ -193,11 +196,12 @@ class TestDevPlanPhase:
     ]
   }
 ]
-```'''
+```"""
         mock_adapter = MockLLMAdapter(mock_response)
 
         with patch("skaro_core.phases.base.create_llm_adapter", return_value=mock_adapter):
             from skaro_core.phases.devplan import DevPlanPhase
+
             phase = DevPlanPhase(project_root=project_with_arch)
             result = await phase.run()
 
@@ -218,6 +222,7 @@ class TestDevPlanPhase:
 
         with patch("skaro_core.phases.base.create_llm_adapter"):
             from skaro_core.phases.devplan import DevPlanPhase
+
             phase = DevPlanPhase(project_root=init_project)
             result = await phase.run()
 
@@ -233,6 +238,7 @@ class TestDevPlanPhase:
 
         with patch("skaro_core.phases.base.create_llm_adapter"):
             from skaro_core.phases.devplan import DevPlanPhase
+
             phase = DevPlanPhase(project_root=init_project)
             result = await phase.run()
 
@@ -242,6 +248,7 @@ class TestDevPlanPhase:
     @pytest.mark.asyncio
     async def test_confirm_plan_creates_directories(self, project_with_arch):
         from skaro_core.phases.devplan import DevPlanPhase
+
         phase = DevPlanPhase(project_root=project_with_arch)
 
         # Write a devplan first
@@ -272,6 +279,7 @@ class TestDevPlanPhase:
     @pytest.mark.asyncio
     async def test_confirm_plan_updates_changelog(self, project_with_arch):
         from skaro_core.phases.devplan import DevPlanPhase
+
         phase = DevPlanPhase(project_root=project_with_arch)
 
         am = ArtifactManager(project_with_arch)
@@ -293,6 +301,7 @@ class TestDevPlanPhase:
     async def test_update_requires_existing_devplan(self, project_with_arch):
         with patch("skaro_core.phases.base.create_llm_adapter"):
             from skaro_core.phases.devplan import DevPlanPhase
+
             phase = DevPlanPhase(project_root=project_with_arch)
             result = await phase.update(user_guidance="Add logging")
 
@@ -302,6 +311,7 @@ class TestDevPlanPhase:
     @pytest.mark.asyncio
     async def test_confirm_update_creates_new_tasks(self, project_with_arch):
         from skaro_core.phases.devplan import DevPlanPhase
+
         phase = DevPlanPhase(project_root=project_with_arch)
 
         am = ArtifactManager(project_with_arch)

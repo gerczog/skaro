@@ -16,7 +16,7 @@ from skaro_core.artifacts import ArtifactManager
 from skaro_core.config import load_config
 from skaro_core.phases.import_analyze import ImportAnalyzePhase
 from skaro_core.phases.repo_scan import RepoScanner
-from skaro_web.api.deps import broadcast, get_am, get_project_root, get_ws_manager, llm_phase
+from skaro_web.api.deps import broadcast, get_am, get_ws_manager, llm_phase
 
 router = APIRouter(prefix="/api/import", tags=["import"])
 
@@ -81,11 +81,14 @@ async def run_import(
         result = await phase.run(project_name=project_name)
 
     if result.success:
-        await broadcast(request, {
-            "event": "import:complete",
-            "artifacts_created": result.artifacts_created,
-            "scan": result.data.get("scan", {}),
-        })
+        await broadcast(
+            request,
+            {
+                "event": "import:complete",
+                "artifacts_created": result.artifacts_created,
+                "scan": result.data.get("scan", {}),
+            },
+        )
 
     return {
         "success": result.success,

@@ -39,10 +39,8 @@ class CommandRunnerMixin:
                 cwd=str(self.artifacts.root),
             )
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    proc.communicate(), timeout=COMMAND_TIMEOUT
-                )
-            except asyncio.TimeoutError:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=COMMAND_TIMEOUT)
+            except TimeoutError:
                 proc.kill()
                 await proc.communicate()
                 return {

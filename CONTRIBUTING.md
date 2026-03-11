@@ -47,6 +47,8 @@ Install the project in editable mode with dev dependencies:
 pip install -e ".[dev]"
 ```
 
+(Alternatively, if you use [uv](https://docs.astral.sh/uv/): `uv sync --all-extras`.)
+
 Build the frontend:
 
 ```bash
@@ -73,7 +75,7 @@ Current config (`pyproject.toml`):
 - `line-length = 100`
 - Enabled rule sets: `E`, `F`, `I`, `N`, `W`, `UP`
 
-Run the linter before committing:
+Run the linter and formatter before committing (both must pass):
 
 ```bash
 ruff check .
@@ -135,7 +137,7 @@ Examples: `feat/dark-mode`, `fix/windows-path`, `docs/contributing`.
 
 1. Create a branch from `main` following the naming convention above.
 2. Make your changes in small, focused commits.
-3. Ensure `ruff check .` and `pytest` pass locally.
+3. Ensure `ruff check .`, `ruff format .` (or no reformat needed), and `pytest` pass locally.
 4. Push your branch and open a Pull Request against `main`.
 5. Fill in the PR description: **what** changed, **why**, and **how to test**.
 6. Wait for a maintainer review. Address feedback with new commits (don't force-push during review).

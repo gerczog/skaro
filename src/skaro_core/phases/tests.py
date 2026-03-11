@@ -21,7 +21,7 @@ import yaml
 
 from skaro_core.phases._command_runner import CommandRunnerMixin
 from skaro_core.phases._plan_utils import count_plan_stages
-from skaro_core.phases.base import BasePhase, PhaseResult, SOURCE_EXTENSIONS, SKIP_DIRS
+from skaro_core.phases.base import SKIP_DIRS, BasePhase, PhaseResult
 
 # Patterns for detecting test files
 _TEST_FILE_PATTERNS = [
@@ -30,6 +30,7 @@ _TEST_FILE_PATTERNS = [
     re.compile(r".*\.test\.(js|ts|jsx|tsx)$", re.IGNORECASE),
     re.compile(r".*\.spec\.(js|ts|jsx|tsx)$", re.IGNORECASE),
 ]
+
 
 class TestsPhase(CommandRunnerMixin, BasePhase):
     phase_name = "tests"
@@ -94,9 +95,7 @@ class TestsPhase(CommandRunnerMixin, BasePhase):
         task_dir = self.artifacts.find_task_dir(task)
         confirmed_path = task_dir / "tests-confirmed"
         confirmed_path.parent.mkdir(parents=True, exist_ok=True)
-        confirmed_path.write_text(
-            datetime.now().isoformat(), encoding="utf-8"
-        )
+        confirmed_path.write_text(datetime.now().isoformat(), encoding="utf-8")
         return PhaseResult(success=True, message="Tests confirmed.")
 
     # ── Verify commands I/O ─────────────────────────
@@ -116,7 +115,10 @@ class TestsPhase(CommandRunnerMixin, BasePhase):
             data = yaml.safe_load(verify_path.read_text(encoding="utf-8"))
             if isinstance(data, list):
                 return [
-                    {"name": str(c.get("name", "")), "command": str(c.get("command", ""))}
+                    {
+                        "name": str(c.get("name", "")),
+                        "command": str(c.get("command", "")),
+                    }
                     for c in data
                     if isinstance(c, dict) and c.get("command", "").strip()
                 ]
@@ -159,23 +161,23 @@ class TestsPhase(CommandRunnerMixin, BasePhase):
                 if normalized in existing_files:
                     found += 1
                 elif any(
-                    ef == normalized
-                    or ef.endswith("/" + normalized)
-                    for ef in existing_files
+                    ef == normalized or ef.endswith("/" + normalized) for ef in existing_files
                 ):
                     # Plan may reference "main.tsx" while disk has "src/main.tsx"
                     found += 1
                 else:
                     missing.append(fp)
-            checks.append({
-                "id": "planned_files",
-                "label": "Files from plan exist",
-                "passed": len(missing) == 0,
-                "detail": (
-                    f"{found}/{len(planned_files)} files found"
-                    + (f". Missing: {', '.join(missing[:10])}" if missing else "")
-                ),
-            })
+            checks.append(
+                {
+                    "id": "planned_files",
+                    "label": "Files from plan exist",
+                    "passed": len(missing) == 0,
+                    "detail": (
+                        f"{found}/{len(planned_files)} files found"
+                        + (f". Missing: {', '.join(missing[:10])}" if missing else "")
+                    ),
+                }
+            )
 
         # Check 2: test files exist in the project
         test_files: list[str] = []
@@ -184,37 +186,41 @@ class TestsPhase(CommandRunnerMixin, BasePhase):
             if any(p.match(filename) for p in _TEST_FILE_PATTERNS):
                 test_files.append(fpath)
 
-        checks.append({
-            "id": "test_files_exist",
-            "label": "Test files present",
-            "passed": len(test_files) > 0,
-            "detail": (
-                f"{len(test_files)} test file(s) found"
-                if test_files
-                else "No test files found"
-            ),
-        })
+        checks.append(
+            {
+                "id": "test_files_exist",
+                "label": "Test files present",
+                "passed": len(test_files) > 0,
+                "detail": (
+                    f"{len(test_files)} test file(s) found" if test_files else "No test files found"
+                ),
+            }
+        )
 
         # Check 3: spec.md exists and is non-empty
         spec = self.artifacts.find_and_read_task_file(task, "spec.md")
         spec_filled = bool(spec and len(spec.strip()) > 50)
-        checks.append({
-            "id": "spec_exists",
-            "label": "Specification filled",
-            "passed": spec_filled,
-            "detail": f"{len(spec)} chars" if spec else "Missing",
-        })
+        checks.append(
+            {
+                "id": "spec_exists",
+                "label": "Specification filled",
+                "passed": spec_filled,
+                "detail": f"{len(spec)} chars" if spec else "Missing",
+            }
+        )
 
         # Check 4: all stages completed
         completed = self.artifacts.find_completed_stages(task)
         plan_stages = count_plan_stages(plan)
         all_stages_done = plan_stages > 0 and len(completed) >= plan_stages
-        checks.append({
-            "id": "stages_complete",
-            "label": "All stages implemented",
-            "passed": all_stages_done,
-            "detail": f"{len(completed)}/{plan_stages} stages",
-        })
+        checks.append(
+            {
+                "id": "stages_complete",
+                "label": "All stages implemented",
+                "passed": all_stages_done,
+                "detail": f"{len(completed)}/{plan_stages} stages",
+            }
+        )
 
         return checks
 
@@ -225,7 +231,9 @@ class TestsPhase(CommandRunnerMixin, BasePhase):
         seen: set[str] = set()
 
         backtick_re = re.compile(r"`([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,10})`")
-        bare_re = re.compile(r"(?:^|\s)([a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)+\.[a-zA-Z]{1,10})(?:\s|$|,|;)")
+        bare_re = re.compile(
+            r"(?:^|\s)([a-zA-Z0-9_.-]+(?:/[a-zA-Z0-9_.-]+)+\.[a-zA-Z]{1,10})(?:\s|$|,|;)"
+        )
 
         for pattern in (backtick_re, bare_re):
             for match in pattern.finditer(plan):

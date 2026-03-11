@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from skaro_web.api.deps import ConnectionManager
 
-
 # ═══════════════════════════════════════════════════
 # ConnectionManager
 # ═══════════════════════════════════════════════════
 
-class TestConnectionManager:
 
+class TestConnectionManager:
     @pytest.mark.asyncio
     async def test_connect_and_disconnect(self):
         manager = ConnectionManager()
@@ -50,6 +49,7 @@ class TestConnectionManager:
         ws2.send_text.assert_awaited_once()
         # Both receive same JSON
         import json
+
         expected = json.dumps({"event": "test"})
         ws1.send_text.assert_awaited_with(expected)
         ws2.send_text.assert_awaited_with(expected)

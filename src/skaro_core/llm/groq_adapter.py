@@ -11,18 +11,23 @@ Free models (2025):
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import openai
 
 from skaro_core.config import LLMConfig
-from skaro_core.llm.base import BaseLLMAdapter, LLMError, LLMMessage, LLMResponse, openai_wrap_error
+from skaro_core.llm.base import (
+    BaseLLMAdapter,
+    LLMError,
+    LLMMessage,
+    LLMResponse,
+    openai_wrap_error,
+)
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 
 class GroqAdapter(BaseLLMAdapter):
-
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         self._validate_api_key()

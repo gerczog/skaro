@@ -263,7 +263,6 @@ class TestADR:
 
 
 class TestGitignore:
-
     def test_init_creates_gitignore(self, project_dir):
         """init_project creates .gitignore with Skaro section."""
         am = ArtifactManager(project_dir)

@@ -2,26 +2,19 @@
 
 from __future__ import annotations
 
-import pytest
-
+from skaro_core.phases._clarify_parser import parse_raw_questions
 from skaro_core.phases.base import BasePhase
 from skaro_core.phases.plan import PlanPhase
-from skaro_core.phases._clarify_parser import parse_raw_questions
-
 
 # ═══════════════════════════════════════════════════
 # _parse_file_blocks (BasePhase static method)
 # ═══════════════════════════════════════════════════
 
-class TestParseFileBlocks:
 
+class TestParseFileBlocks:
     def test_single_file(self):
         content = (
-            "Here is the implementation:\n\n"
-            "```src/main.py\n"
-            "def main():\n"
-            "    print('hello')\n"
-            "```\n"
+            "Here is the implementation:\n\n```src/main.py\ndef main():\n    print('hello')\n```\n"
         )
         result = BasePhase._parse_file_blocks(content)
         assert "src/main.py" in result
@@ -45,13 +38,7 @@ class TestParseFileBlocks:
 
     def test_ignores_language_only_fences(self):
         content = (
-            "Here's an example:\n\n"
-            "```python\n"
-            "x = 42\n"
-            "```\n\n"
-            "```src/real_file.py\n"
-            "y = 99\n"
-            "```\n"
+            "Here's an example:\n\n```python\nx = 42\n```\n\n```src/real_file.py\ny = 99\n```\n"
         )
         result = BasePhase._parse_file_blocks(content)
         assert len(result) == 1
@@ -67,32 +54,17 @@ class TestParseFileBlocks:
         assert BasePhase._parse_file_blocks(content) == {}
 
     def test_nested_path(self):
-        content = (
-            "```src/api/routes/auth.py\n"
-            "from fastapi import APIRouter\n"
-            "```\n"
-        )
+        content = "```src/api/routes/auth.py\nfrom fastapi import APIRouter\n```\n"
         result = BasePhase._parse_file_blocks(content)
         assert "src/api/routes/auth.py" in result
 
     def test_dotfile_recognized(self):
-        content = (
-            "```.gitignore\n"
-            "*.pyc\n"
-            "__pycache__/\n"
-            "```\n"
-        )
+        content = "```.gitignore\n*.pyc\n__pycache__/\n```\n"
         result = BasePhase._parse_file_blocks(content)
         assert ".gitignore" in result
 
     def test_preserves_empty_lines(self):
-        content = (
-            "```src/main.py\n"
-            "line1\n"
-            "\n"
-            "line3\n"
-            "```\n"
-        )
+        content = "```src/main.py\nline1\n\nline3\n```\n"
         result = BasePhase._parse_file_blocks(content)
         assert result["src/main.py"] == "line1\n\nline3"
 
@@ -101,8 +73,8 @@ class TestParseFileBlocks:
 # _strip_fences (PlanPhase static method)
 # ═══════════════════════════════════════════════════
 
-class TestStripFences:
 
+class TestStripFences:
     def test_strips_markdown_fence(self):
         text = "```markdown\n# Plan\n\n## Stage 1\nDo stuff\n```"
         result = PlanPhase._strip_fences(text)
@@ -136,10 +108,10 @@ class TestStripFences:
 # parse_raw_questions (_clarify_parser)
 # ═══════════════════════════════════════════════════
 
-class TestClarifyParser:
 
+class TestClarifyParser:
     def test_json_format(self):
-        text = '''```json
+        text = """```json
 [
   {
     "question": "What database will you use?",
@@ -152,7 +124,7 @@ class TestClarifyParser:
     "options": ["Yes", "No"]
   }
 ]
-```'''
+```"""
         result = parse_raw_questions(text)
         assert len(result) == 2
         assert result[0]["question"] == "What database will you use?"
@@ -186,18 +158,13 @@ class TestClarifyParser:
 
     def test_legacy_q_format(self):
         text = (
-            "Q1. What is the target audience?\n"
-            "Consumer or enterprise?\n\n"
-            "Q2. What is the budget?\n"
+            "Q1. What is the target audience?\nConsumer or enterprise?\n\nQ2. What is the budget?\n"
         )
         result = parse_raw_questions(text)
         assert len(result) == 2
 
     def test_legacy_numbered_plain(self):
-        text = (
-            "1. What language should the API use?\n"
-            "2. Should we support pagination?\n"
-        )
+        text = "1. What language should the API use?\n2. Should we support pagination?\n"
         result = parse_raw_questions(text)
         assert len(result) == 2
 
@@ -215,10 +182,7 @@ class TestClarifyParser:
         assert len(result) == 1
 
     def test_json_invalid_fallback_to_legacy(self):
-        text = (
-            "{invalid json[\n\n"
-            "Question 1: Fallback question?\n"
-        )
+        text = "{invalid json[\n\nQuestion 1: Fallback question?\n"
         result = parse_raw_questions(text)
         assert len(result) == 1
         assert "Fallback" in result[0]["question"]

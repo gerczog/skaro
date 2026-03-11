@@ -53,13 +53,11 @@ def _sse(event: str, data: dict[str, Any]) -> str:
 def _is_task_done(task: dict) -> bool:
     """Check if all four task phases are complete."""
     phases = task.get("phases", {})
-    return all(
-        phases.get(p) == "complete"
-        for p in ("clarify", "plan", "implement", "tests")
-    )
+    return all(phases.get(p) == "complete" for p in ("clarify", "plan", "implement", "tests"))
 
 
 # ── SSE endpoint ─────────────────────────────────────────────────
+
 
 @router.post("/start")
 async def start_autopilot(
@@ -105,11 +103,14 @@ async def start_autopilot(
 
             pending = [t for t in all_tasks if not _is_task_done(t)]
 
-            yield _sse("queue", {
-                "total": len(all_tasks),
-                "pending": len(pending),
-                "tasks": [{"name": t["name"], "milestone": t["milestone"]} for t in pending],
-            })
+            yield _sse(
+                "queue",
+                {
+                    "total": len(all_tasks),
+                    "pending": len(pending),
+                    "tasks": [{"name": t["name"], "milestone": t["milestone"]} for t in pending],
+                },
+            )
 
             completed_count = 0
 
@@ -119,12 +120,15 @@ async def start_autopilot(
                     return
 
                 task_name = task["name"]
-                yield _sse("task:start", {
-                    "task": task_name,
-                    "index": idx,
-                    "total": len(pending),
-                    "milestone": task["milestone"],
-                })
+                yield _sse(
+                    "task:start",
+                    {
+                        "task": task_name,
+                        "index": idx,
+                        "total": len(pending),
+                        "milestone": task["milestone"],
+                    },
+                )
 
                 try:
                     # ── Refresh task state from disk ──
@@ -151,10 +155,14 @@ async def start_autopilot(
                         yield _sse("phase:start", {"task": task_name, "phase": "clarify"})
                         result = await _run_clarify_auto(project_root, ws, task_name)
                         if not result["success"]:
-                            yield _sse("error", {
-                                "task": task_name, "phase": "clarify",
-                                "message": result["message"],
-                            })
+                            yield _sse(
+                                "error",
+                                {
+                                    "task": task_name,
+                                    "phase": "clarify",
+                                    "message": result["message"],
+                                },
+                            )
                             return
                         yield _sse("phase:done", {"task": task_name, "phase": "clarify"})
 
@@ -167,15 +175,23 @@ async def start_autopilot(
                         yield _sse("phase:start", {"task": task_name, "phase": "plan"})
                         result = await _run_plan(project_root, ws, task_name)
                         if not result["success"]:
-                            yield _sse("error", {
-                                "task": task_name, "phase": "plan",
-                                "message": result["message"],
-                            })
+                            yield _sse(
+                                "error",
+                                {
+                                    "task": task_name,
+                                    "phase": "plan",
+                                    "message": result["message"],
+                                },
+                            )
                             return
-                        yield _sse("phase:done", {
-                            "task": task_name, "phase": "plan",
-                            "stages": result.get("stages", 0),
-                        })
+                        yield _sse(
+                            "phase:done",
+                            {
+                                "task": task_name,
+                                "phase": "plan",
+                                "stages": result.get("stages", 0),
+                            },
+                        )
 
                         # Refresh stages count after plan
                         fresh_state = am.get_project_state()
@@ -204,27 +220,44 @@ async def start_autopilot(
                             return
 
                         next_stage = current_stage + 1
-                        yield _sse("phase:start", {
-                            "task": task_name, "phase": "implement",
-                            "stage": next_stage, "total_stages": total_stages,
-                        })
+                        yield _sse(
+                            "phase:start",
+                            {
+                                "task": task_name,
+                                "phase": "implement",
+                                "stage": next_stage,
+                                "total_stages": total_stages,
+                            },
+                        )
 
                         result = await _run_implement_and_apply(
-                            project_root, ws, task_name, next_stage,
+                            project_root,
+                            ws,
+                            task_name,
+                            next_stage,
                         )
                         if not result["success"]:
-                            yield _sse("error", {
-                                "task": task_name, "phase": "implement",
-                                "stage": next_stage,
-                                "message": result["message"],
-                            })
+                            yield _sse(
+                                "error",
+                                {
+                                    "task": task_name,
+                                    "phase": "implement",
+                                    "stage": next_stage,
+                                    "message": result["message"],
+                                },
+                            )
                             return
 
-                        yield _sse("phase:done", {
-                            "task": task_name, "phase": "implement",
-                            "stage": next_stage, "total_stages": total_stages,
-                            "files_count": result.get("files_count", 0),
-                        })
+                        yield _sse(
+                            "phase:done",
+                            {
+                                "task": task_name,
+                                "phase": "implement",
+                                "stage": next_stage,
+                                "total_stages": total_stages,
+                                "files_count": result.get("files_count", 0),
+                            },
+                        )
                         current_stage = next_stage
 
                     # ── TESTS ────────────────────────────
@@ -242,34 +275,47 @@ async def start_autopilot(
                     if phases.get("tests") != "complete":
                         yield _sse("phase:start", {"task": task_name, "phase": "tests"})
                         result = await _run_tests_and_confirm(project_root, task_name)
-                        yield _sse("phase:done", {
-                            "task": task_name, "phase": "tests",
-                            "passed": result.get("passed", False),
-                            "summary": result.get("message", ""),
-                        })
+                        yield _sse(
+                            "phase:done",
+                            {
+                                "task": task_name,
+                                "phase": "tests",
+                                "passed": result.get("passed", False),
+                                "summary": result.get("message", ""),
+                            },
+                        )
 
                     completed_count += 1
-                    yield _sse("task:done", {
-                        "task": task_name,
-                        "index": idx,
-                        "completed": completed_count,
-                        "total": len(pending),
-                    })
+                    yield _sse(
+                        "task:done",
+                        {
+                            "task": task_name,
+                            "index": idx,
+                            "completed": completed_count,
+                            "total": len(pending),
+                        },
+                    )
 
                 except Exception as exc:
                     logger.exception("Autopilot error on task %s", task_name)
-                    yield _sse("error", {
-                        "task": task_name,
-                        "message": str(exc),
-                    })
+                    yield _sse(
+                        "error",
+                        {
+                            "task": task_name,
+                            "message": str(exc),
+                        },
+                    )
                     return
 
             elapsed = round(time.time() - started, 1)
-            yield _sse("completed", {
-                "completed": completed_count,
-                "total": len(pending),
-                "elapsed": elapsed,
-            })
+            yield _sse(
+                "completed",
+                {
+                    "completed": completed_count,
+                    "total": len(pending),
+                    "elapsed": elapsed,
+                },
+            )
         finally:
             _running = False
             _stop_event = None
@@ -304,8 +350,11 @@ async def get_autopilot_state():
 # Phase runners (reuse existing phase classes)
 # ═══════════════════════════════════════════════════
 
+
 async def _run_clarify_auto(
-    project_root: Path, ws: ConnectionManager, task_name: str,
+    project_root: Path,
+    ws: ConnectionManager,
+    task_name: str,
 ) -> dict[str, Any]:
     """Run clarify + auto-answer in one go."""
     from skaro_core.phases.clarify import ClarifyPhase, parse_clarifications
@@ -333,7 +382,9 @@ async def _run_clarify_auto(
     # Step 3: submit answers
     async with llm_phase(ws, "clarify", phase):
         submit_result = await phase.process_answers(
-            task_name, clarify_content, auto_answers,
+            task_name,
+            clarify_content,
+            auto_answers,
         )
 
     await ws.broadcast({"event": "phase:completed", "task": task_name, "phase": "clarify"})
@@ -341,7 +392,9 @@ async def _run_clarify_auto(
 
 
 async def _auto_answer_clarifications(
-    phase, task_name: str, parsed_questions: list[dict],
+    phase,
+    task_name: str,
+    parsed_questions: list[dict],
 ) -> dict[int, str]:
     """Use LLM to auto-answer clarification questions."""
     spec = phase.artifacts.find_and_read_task_file(task_name, "spec.md") or ""
@@ -386,6 +439,7 @@ async def _auto_answer_clarifications(
     # Parse answers
     answers: dict[int, str] = {}
     import re
+
     for match in re.finditer(r"A(\d+):\s*(.+?)(?=\nA\d+:|\Z)", response, re.DOTALL):
         num = int(match.group(1))
         ans = match.group(2).strip()
@@ -400,7 +454,9 @@ async def _auto_answer_clarifications(
 
 
 async def _run_plan(
-    project_root: Path, ws: ConnectionManager, task_name: str,
+    project_root: Path,
+    ws: ConnectionManager,
+    task_name: str,
 ) -> dict[str, Any]:
     """Run plan phase."""
     from skaro_core.phases.plan import PlanPhase
@@ -418,8 +474,10 @@ async def _run_plan(
 
 
 async def _run_implement_and_apply(
-    project_root: Path, ws: ConnectionManager,
-    task_name: str, stage: int,
+    project_root: Path,
+    ws: ConnectionManager,
+    task_name: str,
+    stage: int,
 ) -> dict[str, Any]:
     """Run implement for a single stage and auto-apply all files."""
     from skaro_core.phases.implement import ImplementPhase
@@ -447,21 +505,31 @@ async def _run_implement_and_apply(
             # Auto-stage in git
             try:
                 from skaro_web.api.git import auto_stage_file
+
                 await auto_stage_file(project_root, fpath)
             except Exception:
                 pass  # Git staging is non-critical
         except (ValueError, OSError) as exc:
             logger.warning("Failed to apply %s: %s", fpath, exc)
 
-    await ws.broadcast({
-        "event": "phase:completed", "task": task_name,
-        "phase": "implement", "stage": stage,
-    })
-    return {"success": True, "message": f"Applied {applied} files", "files_count": applied}
+    await ws.broadcast(
+        {
+            "event": "phase:completed",
+            "task": task_name,
+            "phase": "implement",
+            "stage": stage,
+        }
+    )
+    return {
+        "success": True,
+        "message": f"Applied {applied} files",
+        "files_count": applied,
+    }
 
 
 async def _run_tests_and_confirm(
-    project_root: Path, task_name: str,
+    project_root: Path,
+    task_name: str,
 ) -> dict[str, Any]:
     """Run tests and auto-confirm."""
     from skaro_core.phases.tests import TestsPhase

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import anthropic
 
@@ -18,16 +18,22 @@ class AnthropicAdapter(BaseLLMAdapter):
 
     def _wrap_error(self, exc: Exception) -> LLMError:
         if isinstance(exc, anthropic.RateLimitError):
-            return LLMError(f"Anthropic rate limit exceeded. {exc}", provider="anthropic", retriable=True)
+            return LLMError(
+                f"Anthropic rate limit exceeded. {exc}",
+                provider="anthropic",
+                retriable=True,
+            )
         if isinstance(exc, anthropic.AuthenticationError):
             return LLMError(
                 "Anthropic authentication failed (401). Check your API key in Settings.",
-                provider="anthropic", status_code=401,
+                provider="anthropic",
+                status_code=401,
             )
         if isinstance(exc, anthropic.PermissionDeniedError):
             return LLMError(
                 "Anthropic permission denied (403). Your API key may lack required permissions.",
-                provider="anthropic", status_code=403,
+                provider="anthropic",
+                status_code=403,
             )
         if isinstance(exc, anthropic.APIError):
             return LLMError(f"Anthropic API error: {exc}", provider="anthropic")

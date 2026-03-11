@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import shutil
 from pathlib import Path
 
@@ -47,24 +46,24 @@ class ConstitutionMixin:
     def validate_constitution(self) -> dict[str, bool]:
         content = self.read_constitution().lower()
         return {
-            "stack": any(
-                w in content for w in ["## стек", "## stack", "язык:", "language:"]
-            ),
+            "stack": any(w in content for w in ["## стек", "## stack", "язык:", "language:"]),
             "coding_standards": any(
-                w in content
-                for w in ["## стандарты", "## coding", "линтер", "linter", "formatter"]
+                w in content for w in ["## стандарты", "## coding", "линтер", "linter", "formatter"]
             ),
             "testing": any(
-                w in content
-                for w in ["## тестирование", "## testing", "покрытие", "coverage"]
+                w in content for w in ["## тестирование", "## testing", "покрытие", "coverage"]
             ),
             "constraints": any(
-                w in content
-                for w in ["## ограничения", "## constraints", "инфра", "infra"]
+                w in content for w in ["## ограничения", "## constraints", "инфра", "infra"]
             ),
             "security": any(
                 w in content
-                for w in ["## безопасность", "## security", "авторизация", "authorization"]
+                for w in [
+                    "## безопасность",
+                    "## security",
+                    "авторизация",
+                    "authorization",
+                ]
             ),
             "llm_rules": any(
                 w in content

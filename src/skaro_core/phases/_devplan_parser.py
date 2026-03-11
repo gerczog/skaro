@@ -102,24 +102,20 @@ def parse_milestones_markdown(content: str) -> list[dict[str, Any]]:
             slug = make_slug(title)
             idx = len(milestones) + 1
             current_ms = {
-                "milestone_slug": f"{idx:02d}-{slug}" if slug else f"{idx:02d}-milestone",
+                "milestone_slug": (f"{idx:02d}-{slug}" if slug else f"{idx:02d}-milestone"),
                 "milestone_title": title,
                 "tasks": [],
             }
             continue
 
         # _Directory: `milestones/<slug>/`_ — extract original slug
-        dir_match = re.match(
-            r"^_Directory:\s*`milestones/([^/`]+)/?`_", line
-        )
+        dir_match = re.match(r"^_Directory:\s*`milestones/([^/`]+)/?`_", line)
         if dir_match and current_ms is not None:
             current_ms["milestone_slug"] = dir_match.group(1)
             continue
 
         # Table header/separator — skip but mark we're in a table
-        if current_ms is not None and re.match(
-            r"^\|\s*#?\s*\|\s*Task\s*\|", line, re.IGNORECASE
-        ):
+        if current_ms is not None and re.match(r"^\|\s*#?\s*\|\s*Task\s*\|", line, re.IGNORECASE):
             in_table = True
             continue
         if current_ms is not None and re.match(r"^\|[-|:\s]+\|$", line):
@@ -166,9 +162,7 @@ def parse_milestones_markdown(content: str) -> list[dict[str, Any]]:
             current_task = {"name": name, "description": ""}
             continue
 
-        if line.strip().startswith("```") and (
-            "spec" in line.lower() or "md" in line.lower()
-        ):
+        if line.strip().startswith("```") and ("spec" in line.lower() or "md" in line.lower()):
             in_spec = True
             continue
         if in_spec and line.strip() == "```":
@@ -218,26 +212,32 @@ def wrap_legacy_features(features: list[dict[str, Any]]) -> list[dict[str, Any]]
 
     milestones: list[dict[str, Any]] = []
     if foundation:
-        milestones.append({
-            "milestone_slug": "01-foundation",
-            "milestone_title": "Foundation",
-            "description": "Project structure and core components",
-            "tasks": foundation,
-        })
+        milestones.append(
+            {
+                "milestone_slug": "01-foundation",
+                "milestone_title": "Foundation",
+                "description": "Project structure and core components",
+                "tasks": foundation,
+            }
+        )
     if mvp:
-        milestones.append({
-            "milestone_slug": "02-mvp",
-            "milestone_title": "MVP",
-            "description": "Minimum viable product features",
-            "tasks": mvp,
-        })
+        milestones.append(
+            {
+                "milestone_slug": "02-mvp",
+                "milestone_title": "MVP",
+                "description": "Minimum viable product features",
+                "tasks": mvp,
+            }
+        )
     if not milestones:
-        milestones.append({
-            "milestone_slug": "01-mvp",
-            "milestone_title": "MVP",
-            "description": "",
-            "tasks": features,
-        })
+        milestones.append(
+            {
+                "milestone_slug": "01-mvp",
+                "milestone_title": "MVP",
+                "description": "",
+                "tasks": features,
+            }
+        )
 
     return milestones
 

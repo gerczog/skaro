@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator
 
 from skaro_core.config import LLMConfig
 
@@ -46,20 +46,17 @@ class BaseLLMAdapter(ABC):
         self.last_usage: dict[str, int] | None = None
 
     @abstractmethod
-    async def complete(self, messages: list[LLMMessage]) -> LLMResponse:
-        ...
+    async def complete(self, messages: list[LLMMessage]) -> LLMResponse: ...
 
     @abstractmethod
-    async def stream(self, messages: list[LLMMessage]) -> AsyncIterator[str]:
-        ...
+    async def stream(self, messages: list[LLMMessage]) -> AsyncIterator[str]: ...
 
     def _validate_api_key(self) -> None:
         if not self.config.api_key:
             preset = PROVIDER_PRESETS.get(self.config.provider)
             env_hint = f" or set env variable: {preset[1]}" if preset and preset[1] else ""
             raise ValueError(
-                f"API key not found for {self.config.provider}. "
-                f"Enter it in Settings{env_hint}"
+                f"API key not found for {self.config.provider}. Enter it in Settings{env_hint}"
             )
 
     def _wrap_error(self, exc: Exception) -> LLMError:
@@ -80,17 +77,20 @@ def openai_wrap_error(exc: Exception, provider: str) -> LLMError:
     if isinstance(exc, openai.RateLimitError):
         return LLMError(
             f"{provider.title()} rate limit exceeded. {exc}",
-            provider=provider, retriable=True,
+            provider=provider,
+            retriable=True,
         )
     if isinstance(exc, openai.AuthenticationError):
         return LLMError(
             f"{provider.title()} authentication failed (401). Check your API key in Settings.",
-            provider=provider, status_code=401,
+            provider=provider,
+            status_code=401,
         )
     if isinstance(exc, openai.PermissionDeniedError):
         return LLMError(
-            f"{provider.title()} permission denied (403). Your API key may lack required permissions.",
-            provider=provider, status_code=403,
+            f"{provider.title()} permission denied (403). API key may lack permissions.",
+            provider=provider,
+            status_code=403,
         )
     if isinstance(exc, openai.APIError):
         return LLMError(f"{provider.title()} API error: {exc}", provider=provider)
@@ -121,18 +121,21 @@ def create_llm_adapter(config: LLMConfig) -> BaseLLMAdapter:
 
     if provider == "anthropic":
         from skaro_core.llm.anthropic_adapter import AnthropicAdapter
+
         return AnthropicAdapter(config)
     elif provider == "openai":
         from skaro_core.llm.openai_adapter import OpenAIAdapter
+
         return OpenAIAdapter(config)
     elif provider == "groq":
         from skaro_core.llm.groq_adapter import GroqAdapter
+
         return GroqAdapter(config)
     elif provider == "ollama":
         from skaro_core.llm.ollama_adapter import OllamaAdapter
+
         return OllamaAdapter(config)
     else:
         raise ValueError(
-            f"Unknown LLM provider: {provider}. "
-            f"Supported: {', '.join(PROVIDER_PRESETS.keys())}"
+            f"Unknown LLM provider: {provider}. Supported: {', '.join(PROVIDER_PRESETS.keys())}"
         )

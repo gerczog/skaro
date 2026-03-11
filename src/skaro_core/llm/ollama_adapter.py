@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import httpx
 
@@ -14,7 +14,6 @@ DEFAULT_OLLAMA_URL = "http://localhost:11434"
 
 
 class OllamaAdapter(BaseLLMAdapter):
-
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         self.base_url = (config.base_url or DEFAULT_OLLAMA_URL).rstrip("/")

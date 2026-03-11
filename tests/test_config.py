@@ -5,8 +5,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from skaro_core.config import (
     LLMConfig,
     RoleConfig,
@@ -18,7 +16,6 @@ from skaro_core.config import (
 
 
 class TestConfigDefaults:
-
     def test_default_llm_config(self):
         cfg = SkaroConfig()
         assert cfg.llm.provider == "anthropic"
@@ -50,7 +47,6 @@ class TestConfigDefaults:
 
 
 class TestConfigRoundTrip:
-
     def test_to_dict_from_dict(self):
         original = SkaroConfig(
             llm=LLMConfig(provider="openai", model="gpt-4o", temperature=0.7),
@@ -92,21 +88,24 @@ class TestConfigRoundTrip:
         assert cfg.lang == "en"
 
     def test_from_dict_preserves_api_key_env(self):
-        cfg = SkaroConfig.from_dict({
-            "llm": {"api_key_env": "ANTHROPIC_API_KEY"},
-        })
+        cfg = SkaroConfig.from_dict(
+            {
+                "llm": {"api_key_env": "ANTHROPIC_API_KEY"},
+            }
+        )
         assert cfg.llm.api_key_env == "ANTHROPIC_API_KEY"
 
     def test_from_dict_handles_legacy_api_key_field(self):
         """Legacy config files may use 'api_key' instead of 'api_key_env'."""
-        cfg = SkaroConfig.from_dict({
-            "llm": {"api_key": "MY_ENV_KEY"},
-        })
+        cfg = SkaroConfig.from_dict(
+            {
+                "llm": {"api_key": "MY_ENV_KEY"},
+            }
+        )
         assert cfg.llm.api_key_env == "MY_ENV_KEY"
 
 
 class TestConfigSaveLoad:
-
     def test_save_and_load(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -160,7 +159,6 @@ class TestConfigSaveLoad:
 
 
 class TestTokenUsageTracking:
-
     def test_add_token_usage_with_task_param(self):
         """New `task=` parameter works correctly."""
         from skaro_core.config import add_token_usage, load_token_usage, load_usage_log
@@ -232,9 +230,8 @@ class TestTokenUsageTracking:
 
 
 class TestSecrets:
-
     def test_save_and_load_secret(self):
-        from skaro_core.config import save_secret, load_secrets
+        from skaro_core.config import load_secrets, save_secret
 
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -246,7 +243,7 @@ class TestSecrets:
             assert secrets["ANTHROPIC_API_KEY"] == "sk-ant-test123"
 
     def test_save_multiple_secrets(self):
-        from skaro_core.config import save_secret, load_secrets
+        from skaro_core.config import load_secrets, save_secret
 
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -261,7 +258,7 @@ class TestSecrets:
             assert secrets["OPENAI_API_KEY"] == "sk-222"
 
     def test_save_secret_overwrites(self):
-        from skaro_core.config import save_secret, load_secrets
+        from skaro_core.config import load_secrets, save_secret
 
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -296,6 +293,7 @@ class TestSecrets:
 
             # Temporarily override find_project_root to return our tmpdir
             import skaro_core.config as cfg_mod
+
             original = cfg_mod.find_project_root
 
             cfg_mod.find_project_root = lambda start=None: root

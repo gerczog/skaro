@@ -5,7 +5,11 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from skaro_core.phases._devplan_parser import make_slug, parse_milestones, parse_update_response
+from skaro_core.phases._devplan_parser import (
+    make_slug,
+    parse_milestones,
+    parse_update_response,
+)
 from skaro_core.phases._devplan_prompts import (
     DEFAULT_PROMPT,
     DEFAULT_UPDATE_PROMPT,
@@ -216,18 +220,14 @@ class DevPlanPhase(BasePhase):
                     if state.total_stages
                     else "no stages"
                 )
-                lines.append(
-                    f"  - {task}: phase={phase}, progress={progress}%, {stages}"
-                )
+                lines.append(f"  - {task}: phase={phase}, progress={progress}%, {stages}")
         return "\n".join(lines) if lines else "(no tasks yet)"
 
     async def _llm_collect_with_high_limit(self, messages: list) -> str:
         """Stream-collect LLM response with temporarily raised max_tokens."""
         original_max = self.llm.config.max_tokens
         provider = self.llm.config.provider.lower()
-        self.llm.config.max_tokens = max(
-            original_max, _DEVPLAN_TOKEN_LIMITS.get(provider, 16384)
-        )
+        self.llm.config.max_tokens = max(original_max, _DEVPLAN_TOKEN_LIMITS.get(provider, 16384))
         try:
             return await self._stream_collect(messages)
         finally:

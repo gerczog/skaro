@@ -46,11 +46,13 @@ def _try_parse_json(text: str) -> list[dict] | None:
     for item in data:
         if not isinstance(item, dict) or "question" not in item:
             continue
-        result.append({
-            "question": str(item.get("question", "")),
-            "context": str(item.get("context", "")),
-            "options": [str(o) for o in item.get("options", []) if o],
-        })
+        result.append(
+            {
+                "question": str(item.get("question", "")),
+                "context": str(item.get("context", "")),
+                "options": [str(o) for o in item.get("options", []) if o],
+            }
+        )
 
     return result if result else None
 
@@ -70,21 +72,25 @@ def _parse_legacy(text: str) -> list[dict]:
         stripped = line.strip()
         if pattern.match(stripped):
             if current_lines and in_question:
-                questions.append({
-                    "question": "\n".join(current_lines).strip(),
-                    "context": "",
-                    "options": [],
-                })
+                questions.append(
+                    {
+                        "question": "\n".join(current_lines).strip(),
+                        "context": "",
+                        "options": [],
+                    }
+                )
             current_lines = [line]
             in_question = True
         elif in_question:
             current_lines.append(line)
 
     if current_lines and in_question:
-        questions.append({
-            "question": "\n".join(current_lines).strip(),
-            "context": "",
-            "options": [],
-        })
+        questions.append(
+            {
+                "question": "\n".join(current_lines).strip(),
+                "context": "",
+                "options": [],
+            }
+        )
 
     return questions

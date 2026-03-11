@@ -2,10 +2,10 @@
 
 from skaro_core.phases.architecture import ArchitecturePhase
 from skaro_core.phases.base import (
-    BasePhase,
-    PhaseResult,
     SKIP_DIRS,
     SOURCE_EXTENSIONS,
+    BasePhase,
+    PhaseResult,
 )
 from skaro_core.phases.clarify import ClarifyPhase
 from skaro_core.phases.devplan import DevPlanPhase

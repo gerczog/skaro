@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -72,7 +72,7 @@ def add_token_usage(
 
     # Append detailed entry to JSONL log
     entry = {
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": datetime.now(UTC).isoformat(),
         "phase": phase,
         "task": resolved_task,
         "feature": resolved_task,

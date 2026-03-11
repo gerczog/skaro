@@ -6,23 +6,26 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # ═══════════════════════════════════════════════════
 # Shared / reusable
 # ═══════════════════════════════════════════════════
 
+
 class ContentBody(BaseModel):
     """Generic body with a single 'content' field (constitution, architecture, devplan, ADR)."""
+
     content: str
 
 
 class GenerateFromIdeaBody(BaseModel):
     """Body for generate-from-description endpoints (constitution, architecture)."""
+
     description: str = ""
 
 
 class FileApplyBody(BaseModel):
     """Apply a generated file to disk."""
+
     filepath: str = Field(..., min_length=1)
     content: str
 
@@ -41,6 +44,7 @@ class FileApplyBody(BaseModel):
 # Architecture
 # ═══════════════════════════════════════════════════
 
+
 class ArchReviewBody(BaseModel):
     architecture_draft: str = ""
     domain_description: str = ""
@@ -48,6 +52,7 @@ class ArchReviewBody(BaseModel):
 
 class ArchChatBody(BaseModel):
     """Payload for architecture generation chat."""
+
     message: str = Field(..., min_length=1)
     conversation: list[dict[str, str]] = Field(default_factory=list)
 
@@ -76,6 +81,7 @@ class AdrStatusBody(BaseModel):
 # Development Plan
 # ═══════════════════════════════════════════════════
 
+
 class DevPlanTask(BaseModel):
     name: str = ""
     description: str = ""
@@ -101,6 +107,7 @@ class DevPlanUpdateBody(BaseModel):
 
 class DevPlanConfirmUpdateBody(BaseModel):
     """Accept update: full devplan text (can be empty if only new_milestones) + new milestones."""
+
     updated_devplan: str = ""
     new_milestones: list[DevPlanMilestone] = Field(default_factory=list)
 
@@ -109,6 +116,7 @@ class DevPlanConfirmUpdateBody(BaseModel):
 # Tasks
 # ═══════════════════════════════════════════════════
 
+
 class TaskCreateBody(BaseModel):
     name: str = Field(..., min_length=1)
     milestone: str = ""
@@ -116,12 +124,14 @@ class TaskCreateBody(BaseModel):
 
 class TaskReorderBody(BaseModel):
     """Reorder tasks within a milestone."""
+
     milestone: str = Field(..., min_length=1)
     tasks: list[str] = Field(..., min_length=1)
 
 
 class TaskFileSaveBody(BaseModel):
     """Save a task file (spec.md, plan.md, etc.)."""
+
     filename: str = Field(..., min_length=1)
     content: str
 
@@ -171,6 +181,7 @@ class FixBody(BaseModel):
 
 class ProjectFixBody(BaseModel):
     """Payload for project-level fix chat."""
+
     message: str = Field(..., min_length=1)
     conversation: list[dict[str, str]] = Field(default_factory=list)
     scope_tasks: list[str] = Field(default_factory=list)
@@ -180,20 +191,24 @@ class ProjectFixBody(BaseModel):
 # Verify commands (Tests phase)
 # ═══════════════════════════════════════════════════
 
+
 class VerifyCommandItem(BaseModel):
     """A single verify command for a task."""
+
     name: str = ""
     command: str = ""
 
 
 class VerifyCommandsBody(BaseModel):
     """Payload for saving task-level verify commands."""
+
     commands: list[VerifyCommandItem] = Field(default_factory=list)
 
 
 # ═══════════════════════════════════════════════════
 # Configuration
 # ═══════════════════════════════════════════════════
+
 
 class LLMConfigBody(BaseModel):
     provider: str = "anthropic"
@@ -241,18 +256,22 @@ class ConfigUpdateBody(BaseModel):
 # Git
 # ═══════════════════════════════════════════════════
 
+
 class GitStageBody(BaseModel):
     """Stage or unstage a list of file paths."""
+
     files: list[str] = Field(..., min_length=1)
 
 
 class GitCommitBody(BaseModel):
     """Commit staged changes."""
+
     message: str = Field(..., min_length=1)
     push: bool = False
 
 
 class GitCheckoutBody(BaseModel):
     """Switch or create a branch."""
+
     branch: str = Field(..., min_length=1)
     create: bool = False

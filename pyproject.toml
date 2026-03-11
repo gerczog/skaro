@@ -58,6 +58,8 @@ source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/skaro_core", "src/skaro_cli", "src/skaro_web"]
+# Exclude static so it's only included via force-include (avoids duplicate entries in wheel)
+exclude = ["src/skaro_web/static"]
 
 # Bundle root-level templates/ into the skaro_core package so that
 # importlib.resources.files("skaro_core") / "templates" resolves correctly

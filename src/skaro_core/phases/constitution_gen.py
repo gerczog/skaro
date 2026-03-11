@@ -2,16 +2,36 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from skaro_core.llm.base import LLMMessage
-from skaro_core.phases.base import BasePhase
+from skaro_core.phases.base import BasePhase, PhaseResult
 
 
 class ConstitutionGenPhase(BasePhase):
     """Generate a constitution document from a free-form project description."""
 
     phase_name = "constitution_gen"
+
+    async def run(self, task: str | None = None, **kwargs) -> PhaseResult:
+        """Run constitution generation. Uses task or description kwarg as the idea."""
+        description = (task or "").strip() or (kwargs.get("description") or "").strip()
+        if not description:
+            return PhaseResult(
+                success=False,
+                message="Description is required for constitution generation.",
+                data={},
+            )
+        content = await self.generate_from_description(description)
+        if not content or not content.strip():
+            return PhaseResult(
+                success=False,
+                message="LLM returned empty content.",
+                data={"content": ""},
+            )
+        return PhaseResult(
+            success=True,
+            message="",
+            data={"content": content},
+        )
 
     async def generate_from_description(self, description: str) -> str:
         """Call LLM to generate constitution text from user description. Returns raw markdown."""

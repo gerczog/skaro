@@ -133,9 +133,14 @@ def create_app(project_root: Path | None = None) -> FastAPI:
                 return FileResponse(DASHBOARD_FILE)
             return HTMLResponse(
                 "<h1>Skaro Dashboard</h1>"
-                "<p>No frontend build found.</p>"
-                "<p>Run: <code>cd frontend && npm install && npm run build</code></p>"
-                f"<p>Looked in: {STATIC_DIR}</p>"
+                "<p><strong>No frontend build found.</strong></p>"
+                "<p>When installing from PyPI or <code>pip install git+...</code>, the frontend is built during install — <strong>Node.js and npm must be installed</strong> on the machine where you run <code>pip install</code>.</p>"
+                "<p><strong>Fix:</strong></p>"
+                "<ul>"
+                "<li>Install Node.js 18+ and npm, then reinstall: <code>pip install --no-cache-dir skaro</code> (or your <code>git+https://...</code> URL).</li>"
+                "<li>Or, from the Skaro repo: <code>cd frontend && npm install && npm run build</code>, then <code>pip install -e .</code> so the app uses the repo’s built static files.</li>"
+                "</ul>"
+                f"<p>Looked in: <code>{STATIC_DIR}</code></p>"
             )
         except Exception as e:
             logger.error("serve_dashboard error: %s", e, exc_info=True)

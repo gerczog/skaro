@@ -31,7 +31,8 @@ Specifications live in the repository next to code. Context never gets lost.
 
 ## Install
 
-Python 3.11+ required. Everything included: CLI, web dashboard, LLM adapters, templates.
+Python 3.11+ required. Everything included: CLI, web dashboard, LLM adapters, templates.  
+When installing from **git** (e.g. a fork), **Node.js 18+** and **npm** must be installed so the dashboard frontend is built during `pip install`; otherwise `skaro ui` will show “No frontend build found”.
 
 ### Install this fork
 
@@ -49,7 +50,8 @@ curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
 irm https://raw.githubusercontent.com/gerczog/skaro/main/install.ps1 | iex
 ```
 
-**Verified fork install (Linux / macOS):**
+**Verified fork install (Linux / macOS):**  
+Install Node.js 18+ and npm first so the dashboard frontend builds during install. Then:
 
 ```sh
 export SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main"

@@ -66,15 +66,24 @@ async def list_presets():
     return {"presets": _PRESET_REGISTRY}
 
 
+def _default_constitution_example() -> str:
+    """Load example constitution for empty-input / fallback (e.g. python-cli preset)."""
+    if _PRESETS_DIR is None:
+        return ""
+    path = _PRESETS_DIR / "python-cli.md"
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    return ""
+
+
 @router.post("/generate")
 async def generate_constitution_from_idea(
     payload: GenerateFromIdeaBody,
     project_root=Depends(get_project_root),
     ws_manager=Depends(get_ws_manager),
+    am: ArtifactManager = Depends(get_am),
 ):
-    """Generate constitution from a short project idea description (LLM)."""
-    if not payload.description or not payload.description.strip():
-        raise HTTPException(status_code=400, detail="description is required")
+    """Generate constitution from idea (or refine existing). Pass description and/or use existing constitution."""
     try:
         from skaro_core.phases.constitution_gen import ConstitutionGenPhase
     except ModuleNotFoundError as e:
@@ -82,11 +91,19 @@ async def generate_constitution_from_idea(
             status_code=501,
             detail="Upgrade Skaro to a version with constitution-from-idea (install from your fork or latest main).",
         ) from e
+    existing = (am.read_constitution() or "").strip()
+    default_example = _default_constitution_example()
+    description = (payload.description or "").strip()
     phase = ConstitutionGenPhase(project_root=project_root)
     async with llm_phase(ws_manager, "constitution-generate", phase):
-        content = await phase.generate_from_description(payload.description.strip())
+        content = await phase.generate_from_description(
+            description=description,
+            existing_constitution=existing,
+            default_example=default_example,
+        )
     if not content or not content.strip():
-        return {"success": False, "message": "LLM returned empty content", "content": ""}
+        content = existing or default_example
+        return {"success": bool(content), "message": "No new content; returning existing or example.", "content": content or ""}
     return {"success": True, "content": content}
 
 

@@ -65,7 +65,6 @@
 
 	async function generateFromIdea() {
 		const desc = generateIdeaDescription.trim();
-		if (!desc) return;
 		generatingFromIdea = true;
 		addLog($t('log.const_generate_start'));
 		try {
@@ -115,7 +114,7 @@
 					rows="4"
 					disabled={generatingFromIdea}
 				></textarea>
-				<button type="button" class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
+				<button type="button" class="btn btn-primary" disabled={generatingFromIdea} onclick={generateFromIdea}>
 					{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
 					{$t('const.generate_btn')}
 				</button>
@@ -149,7 +148,7 @@
 						rows="4"
 						disabled={generatingFromIdea}
 					></textarea>
-					<button class="btn btn-primary" disabled={generatingFromIdea || !generateIdeaDescription.trim()} onclick={generateFromIdea}>
+					<button class="btn btn-primary" disabled={generatingFromIdea} onclick={generateFromIdea}>
 						{#if generatingFromIdea}<Loader2 size={14} class="spin" />{:else}<Sparkles size={14} />{/if}
 						{$t('const.generate_btn')}
 					</button>

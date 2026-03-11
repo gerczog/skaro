@@ -1,9 +1,10 @@
 import { writable, derived } from 'svelte/store';
 import en from './en.js';
 import ru from './ru.js';
+import ua from './ua.js';
 
 /** @type {Record<string, Record<string, string>>} */
-const locales = { en, ru };
+const locales = { en, ru, ua };
 
 /** @type {string[]} */
 export const availableLocales = Object.keys(locales);

@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { t } from '$lib/i18n/index.js';
+	import { t, setLocale } from '$lib/i18n/index.js';
 	import { api, connectWs, onWsEvent, onWsStatus } from '$lib/api/client.js';
 	import { status, wsConnected, taskDetail, updateInfo } from '$lib/stores/statusStore.js';
 	import { addLog, startLlm, addLlmChunk, endLlm } from '$lib/stores/logStore.js';
@@ -87,7 +87,11 @@
 
 	async function loadStatus() {
 		try {
-			status.set(await cachedFetch('status', () => api.getStatus(), 5000));
+			const statusData = await cachedFetch('status', () => api.getStatus(), 5000);
+			status.set(statusData);
+			if (statusData?.lang) {
+				setLocale(statusData.lang);
+			}
 			error = '';
 		} catch (e) {
 			error = e.message;

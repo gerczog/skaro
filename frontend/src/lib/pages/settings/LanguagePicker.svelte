@@ -31,6 +31,16 @@
 			</svg>
 			Русский
 		</button>
+		<button class="tab" class:active={lang === 'ua'} onclick={() => lang = 'ua'}>
+			<svg class="flag" viewBox="0 0 60 30" width="24" height="12">
+				<clipPath id="ua"><rect width="60" height="30" rx="2"/></clipPath>
+				<g clip-path="url(#ua)">
+					<rect width="60" height="15" fill="#0057B7"/>
+					<rect y="15" width="60" height="15" fill="#FFD700"/>
+				</g>
+			</svg>
+			Українська
+		</button>
 	</div>
 </div>
 

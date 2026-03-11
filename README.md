@@ -49,6 +49,15 @@ curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
 irm https://raw.githubusercontent.com/gerczog/skaro/main/install.ps1 | iex
 ```
 
+**Verified fork install (Linux / macOS):**
+
+```sh
+export SKARO_INSTALL_TARGET="git+https://github.com/gerczog/skaro.git@main"
+curl -fsSL https://raw.githubusercontent.com/gerczog/skaro/main/install.sh | sh
+hash -r
+skaro init
+```
+
 ### Universal install (any fork)
 
 Upstream repository: [https://github.com/skarodev/skaro](https://github.com/skarodev/skaro)  

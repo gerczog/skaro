@@ -123,10 +123,27 @@ main() {
     info "Installing $PACKAGE_NAME from $INSTALL_TARGET_RESOLVED (this may take a moment)..."
     INSTALL_LOG="$SKARO_HOME/install.log"
     "$VENV_DIR/bin/python" -m pip install --upgrade pip >/dev/null 2>&1 || true
-    if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
-        warn "Install failed. Last log lines:"
-        tail -40 "$INSTALL_LOG" >&2 || true
-        fail "pip install failed (full log: $INSTALL_LOG)"
+
+    # When installing from git, use --no-build-isolation so the frontend build hook
+    # runs in an environment where Node.js/npm are available (current PATH).
+    USE_NO_BUILD_ISOLATION=""
+    case "$INSTALL_TARGET_RESOLVED" in
+        git+*|git@*) USE_NO_BUILD_ISOLATION="1" ;;
+    esac
+    if [ -n "$USE_NO_BUILD_ISOLATION" ]; then
+        info "Installing from git: ensuring build deps and using current env (Node.js required for dashboard)..."
+        "$VENV_DIR/bin/python" -m pip install --quiet hatchling hatch-vcs 2>/dev/null || true
+        if ! "$VENV_DIR/bin/python" -m pip install --upgrade --no-build-isolation "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
+            warn "Install failed. Last log lines:"
+            tail -40 "$INSTALL_LOG" >&2 || true
+            fail "pip install failed (full log: $INSTALL_LOG). Ensure Node.js 18+ and npm are installed so the dashboard can be built."
+        fi
+    else
+        if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$INSTALL_TARGET_RESOLVED" >"$INSTALL_LOG" 2>&1; then
+            warn "Install failed. Last log lines:"
+            tail -40 "$INSTALL_LOG" >&2 || true
+            fail "pip install failed (full log: $INSTALL_LOG)"
+        fi
     fi
     tail -1 "$INSTALL_LOG" || true
     installed_version=$("$VENV_DIR/bin/python" -c "import importlib.metadata as m; print(m.version('skaro'))" 2>/dev/null || true)

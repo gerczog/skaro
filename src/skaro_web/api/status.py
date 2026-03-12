@@ -195,7 +195,8 @@ async def get_status(
     am: ArtifactManager = Depends(get_am),
     project_root: Path = Depends(get_project_root),
 ):
-    return _build_status(am, project_root)
+    """Return project status; runs in thread pool so heavy I/O does not block the event loop."""
+    return await asyncio.to_thread(_build_status, am, project_root)
 
 
 @router.get("/tokens")
@@ -232,10 +233,11 @@ async def get_dashboard(
     project_root: Path = Depends(get_project_root),
 ):
     """Combined dashboard data: project status + usage statistics in one request."""
-    return {
-        "status": _build_status(am, project_root),
-        "stats": await asyncio.to_thread(_build_stats, project_root),
-    }
+    status_data, stats_data = await asyncio.gather(
+        asyncio.to_thread(_build_status, am, project_root),
+        asyncio.to_thread(_build_stats, project_root),
+    )
+    return {"status": status_data, "stats": stats_data}
 
 
 @router.get("/debug/static")

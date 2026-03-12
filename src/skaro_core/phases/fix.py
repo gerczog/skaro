@@ -38,22 +38,64 @@ class FixPhase(ConversationalFixBase):
 
         user_message: str = kwargs.get("message", "")
         conversation: list[dict] = kwargs.get("conversation", [])
+        scope_paths: list[str] = kwargs.get("scope_paths", [])
 
         if not user_message.strip():
             return PhaseResult(success=False, message="Message is required.")
 
-        extra_context = await asyncio.to_thread(
-            self._build_task_context,
-            task,
-            max_files=30,
-            max_file_size=15_000,
+        # Build smart context: AST index (cacheable) + relevant files (dynamic)
+        from skaro_core.context import SmartContextBuilder
+
+        builder = SmartContextBuilder(self.artifacts.root)
+        smart = await asyncio.to_thread(
+            builder.build,
+            stage_section=user_message,
+            max_full_files=0,  # Tier 1 is handled by scope_paths
+            max_full_file_size=15_000,
         )
+
+        # Cacheable: architecture + AST index
+        cacheable_context: dict[str, str] = {}
+        architecture = self.artifacts.read_architecture()
+        if architecture.strip():
+            cacheable_context["Architecture"] = architecture
+        if smart.signatures:
+            cacheable_context["Project API Index (all modules)"] = smart.signatures
+
+        # Dynamic context
+        extra_context: dict[str, str] = {}
+        spec = self.artifacts.find_and_read_task_file(task, "spec.md")
+        if spec:
+            extra_context["Task Specification"] = spec
+        clarif = self.artifacts.find_and_read_task_file(task, "clarifications.md")
+        if clarif:
+            extra_context["Clarifications"] = clarif
+        plan = self.artifacts.find_and_read_task_file(task, "plan.md")
+        if plan:
+            extra_context["Implementation Plan"] = plan
+        # AI_NOTES from completed stages
+        completed = self.artifacts.find_completed_stages(task)
+        for s in sorted(completed):
+            notes_path = self.artifacts.find_stage_dir(task, s) / "AI_NOTES.md"
+            if notes_path.exists():
+                extra_context[f"Stage {s} AI_NOTES"] = notes_path.read_text(encoding="utf-8")
+
+        # Tier 1 files: user-selected scope (full code)
+        if scope_paths:
+            scope_code = await asyncio.to_thread(self._read_scope_files, scope_paths)
+            if scope_code:
+                extra_context["Selected source files (full code)"] = scope_code
+
+        tree = await self._scan_project_tree_async()
+        if tree:
+            extra_context["Project File Tree"] = tree
 
         response, proposed, file_diffs, updated_conv = await self._run_fix(
             user_message,
             conversation,
             extra_context,
             task=task,
+            cacheable_context=cacheable_context,
         )
 
         # Persist

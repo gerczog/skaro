@@ -177,6 +177,7 @@ class ImplementBody(BaseModel):
 class FixBody(BaseModel):
     message: str = Field(..., min_length=1)
     conversation: list[dict[str, str]] = Field(default_factory=list)
+    scope_paths: list[str] = Field(default_factory=list)
 
 
 class ProjectFixBody(BaseModel):
@@ -185,6 +186,7 @@ class ProjectFixBody(BaseModel):
     message: str = Field(..., min_length=1)
     conversation: list[dict[str, str]] = Field(default_factory=list)
     scope_tasks: list[str] = Field(default_factory=list)
+    scope_paths: list[str] = Field(default_factory=list)
 
 
 # ═══════════════════════════════════════════════════

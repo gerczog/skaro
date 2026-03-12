@@ -239,8 +239,33 @@ async def save_clarify_draft(
 async def run_plan(
     name: str,
     project_root: Path = Depends(get_project_root),
+    am: ArtifactManager = Depends(get_am),
     ws: ConnectionManager = Depends(get_ws_manager),
 ):
+    # Guard: clarification questions must be answered before generating plan
+    clarify_content = am.find_and_read_task_file(name, "clarifications.md")
+    if clarify_content:
+        from skaro_core.phases.clarify import parse_clarifications
+
+        parsed = parse_clarifications(clarify_content)
+        unanswered = [q for q in parsed if not q.get("answer", "").strip()]
+        if unanswered:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "message": f"Cannot generate plan: {len(unanswered)} clarification question(s) still unanswered.",
+                },
+            )
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "message": "Cannot generate plan: clarification phase has not been run yet.",
+            },
+        )
+
     from skaro_core.phases.plan import PlanPhase
 
     phase = PlanPhase(project_root=project_root)
@@ -406,7 +431,7 @@ async def run_fix(
     async with llm_phase(ws, "fix", phase):
         result = await phase.run(
             task=name, message=payload.message, conversation=payload.conversation
-        )
+        , scope_paths=payload.scope_paths)
     if result.success:
         await ws.broadcast({"event": "fix:response", "task": name})
     return {

@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from skaro_core.llm.base import LLMMessage
-from skaro_core.phases.base import BasePhase, PhaseResult
+from skaro_core.phases.base import BasePhase, PhaseResult, SKIP_DIRS
 
 # ── Shared system-prompt fragment ────────────────────
 
@@ -47,6 +47,7 @@ class ConversationalFixBase(BasePhase):
         extra_context: dict[str, str],
         *,
         task: str = "",
+        cacheable_context: dict[str, str] | None = None,
     ) -> tuple[str, dict[str, str], dict[str, dict], list[dict]]:
         """Execute the shared fix-conversation flow.
 
@@ -69,9 +70,31 @@ class ConversationalFixBase(BasePhase):
         )
 
         # ── Messages ──
-        messages: list[LLMMessage] = [LLMMessage(role="system", content=system)]
+        messages: list[LLMMessage] = [LLMMessage(role="system", content=system, cache=True)]
 
-        # Inject rich context
+        # Inject cacheable context (AST index, architecture) — prompt caching
+        if cacheable_context:
+            ctx_parts = [
+                f"## {label}\n\n{content}"
+                for label, content in cacheable_context.items()
+                if content.strip()
+            ]
+            if ctx_parts:
+                messages.append(
+                    LLMMessage(
+                        role="user",
+                        content="\n\n---\n\n".join(ctx_parts),
+                        cache=True,
+                    )
+                )
+                messages.append(
+                    LLMMessage(
+                        role="assistant",
+                        content="I've reviewed the project API index. Ready to help fix issues.",
+                    )
+                )
+
+        # Inject dynamic context
         if extra_context:
             ctx_parts = [
                 f"## {label}\n\n{content}"
@@ -137,6 +160,65 @@ class ConversationalFixBase(BasePhase):
             except (UnicodeDecodeError, PermissionError):
                 return None
         return None
+
+    def _read_scope_files(
+        self,
+        scope_paths: list[str],
+        *,
+        max_files: int = 30,
+        max_file_size: int = 15_000,
+    ) -> str:
+        """Read full code for user-selected scope paths.
+
+        Paths can be files or directories. Directories are expanded
+        recursively to include all text files within.
+        User explicitly chose these paths — no extension filtering on files.
+
+        Returns formatted markdown blocks ready for LLM context.
+        """
+        root = self.artifacts.root
+        collected: dict[str, str] = {}
+
+        for sp in scope_paths:
+            if len(collected) >= max_files:
+                break
+            target = root / sp
+            if target.is_file():
+                # User selected this file explicitly — read it
+                self._read_into(target, root, collected, max_file_size)
+            elif target.is_dir():
+                for child in sorted(target.rglob("*")):
+                    if len(collected) >= max_files:
+                        break
+                    parts = child.relative_to(root).parts
+                    if any(d in SKIP_DIRS or d.startswith(".") for d in parts[:-1]):
+                        continue
+                    if child.is_file():
+                        self._read_into(child, root, collected, max_file_size)
+
+        if not collected:
+            return ""
+        parts = []
+        for fpath, content in collected.items():
+            parts.append(f"### {fpath}\n```\n{content}\n```")
+        return "\n\n".join(parts)
+
+    @staticmethod
+    def _read_into(
+        path: Path, root: Path,
+        target: dict[str, str], max_size: int,
+    ) -> None:
+        """Read a single file into the target dict."""
+        rel = str(path.relative_to(root)).replace("\\", "/")
+        if rel in target:
+            return
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, PermissionError):
+            return
+        if len(content) > max_size:
+            content = content[:max_size] + "\n... (truncated)"
+        target[rel] = content
 
     def _apply_file_to_disk(self, filepath: str, content: str) -> PhaseResult:
         """Validate path, write file, return result (no logging)."""
